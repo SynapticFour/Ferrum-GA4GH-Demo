@@ -1,0 +1,17 @@
+# GA4GH benchmark overlay: real TES (Docker) + WES workdir on host + Cromwell→GATK (docker.sock).
+# Used as: docker compose -f deploy/docker-compose.yml -f demo/docker-compose.ga4gh.yml
+services:
+  ferrum-gateway:
+    environment:
+      FERRUM_TES_BACKEND: docker
+      FERRUM_TES_WORK_DIR: /tmp/tes-jobs
+      FERRUM_WES_WORK_DIR: /wes-runs
+      FERRUM_WES_WORK_HOST: ${FERUM_WES_WORK_HOST:?set FERUM_WES_WORK_HOST to host abs path}
+      # Default is socket-only; demo/run.sh prepends a Linux static `docker` binary (see scripts/ensure_docker_cli_static.sh).
+      FERRUM_TES_EXTRA_BINDS: ${FERRUM_TES_EXTRA_BINDS:-/var/run/docker.sock:/var/run/docker.sock}
+      FERRUM_TES_DOCKER_NETWORK: ${FERRUM_TES_DOCKER_NETWORK:?set FERRUM_TES_DOCKER_NETWORK to compose network}
+      FERRUM_TES_EXTRA_HOSTS: host.docker.internal:host-gateway
+      FERRUM_DRS_HOSTNAME: ferrum-gateway:8080
+    volumes:
+      - ${FERUM_WES_WORK_HOST}:/wes-runs
+      - /var/run/docker.sock:/var/run/docker.sock

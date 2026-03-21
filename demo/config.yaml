@@ -1,0 +1,32 @@
+# GA4GH demo configuration (pinned scientific artifact).
+ferrum:
+  gateway_port: 8080
+  compose_project: ferrum-ga4gh-demo
+
+dockstore:
+  # TRS 2.0: GATK4 germline joint genotyping WDL (includes HaplotypeCaller GVCF inputs); cached under workflows/cached/.
+  tool_id: "#workflow/github.com/alexanderhsieh/gatk4-germline-snps-indels/gatk4-germline-snps-indels-AH"
+  version: "master"
+
+region:
+  # GRCh37 / b37 — matches Platinum Genomes NA12878 BAM below.
+  contig: "22"
+  start: 16050000
+  end: 16080000
+
+data_sources:
+  # Platinum Genomes — public HTTP; subset extracted with samtools in scripts/fetch_giab_subset.sh
+  platinum_na12878_bam: "https://storage.googleapis.com/genomics-public-data/platinum-genomes/bam/NA12878_S1.bam"
+  # GIAB HG001 (NA12878) GRCh37 benchmark VCF (full; sliced in fetch script).
+  giab_truth_vcf: "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv3.3.2/GRCh37/HG001_GIAB_highconf_IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v3.3.2_highconf.vcf.gz"
+  giab_truth_tbi: "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv3.3.2/GRCH37/HG001_GIAB_highconf_IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v3.3.2_highconf.vcf.gz.tbi"
+  giab_bed: "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv3.3.2/GRCh37/HG001_GIAB_highconf_IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v3.3.2_highconf_noinconsistent.bed"
+  # 1000 Genomes reference (index downloaded alongside in fetch script).
+  ref_fasta_gz: "http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz"
+
+workflow:
+  # Executed WDL (tiny HaplotypeCaller) — Dockstore artifact is still fetched & cached for TRS compliance.
+  local_wdl: "workflows/tiny_hc.wdl"
+
+http:
+  static_port: 9998

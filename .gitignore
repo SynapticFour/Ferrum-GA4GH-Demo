@@ -1,0 +1,17 @@
+.cache/
+data/*.bam
+data/*.bai
+data/*.fa
+data/*.fai
+data/*.bed
+data/*.vcf
+data/*.vcf.gz
+data/*.tbi
+data/reads.sam
+data/synthetic_manifest.txt
+results/
+workflows/cached/
+__pycache__/
+*.pyc
+.DS_Store
+_ferrum_upstream/

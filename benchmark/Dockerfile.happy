@@ -1,0 +1,8 @@
+# Bioconda hap.py is linux-amd64; pin platform so Apple Silicon builders still solve.
+FROM --platform=linux/amd64 mambaorg/micromamba:1.5.8
+
+RUN micromamba install -y -n base -c conda-forge -c bioconda \
+  'hap.py==0.3.15' 'rtg-tools>=3.13' \
+  && micromamba clean -a -y
+
+ENV PATH="/opt/conda/bin:${PATH}"
