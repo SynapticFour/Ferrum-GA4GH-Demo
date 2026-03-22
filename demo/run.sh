@@ -8,6 +8,12 @@ export FERRUM_GA4GH_DEMO_ROOT="$ROOT"
 
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-ferrum-ga4gh-demo}"
 export FERUM_WES_WORK_HOST="${FERUM_WES_WORK_HOST:-$ROOT/results/wes-work}"
+# Official nextflow/nextflow images are amd64-only; without this, arm64 hosts fail to create the TES container.
+case "$(uname -m)" in
+  arm64 | aarch64)
+    export FERRUM_TES_DOCKER_PLATFORM="${FERRUM_TES_DOCKER_PLATFORM:-linux/amd64}"
+    ;;
+esac
 export FERRUM_TES_DOCKER_NETWORK="${COMPOSE_PROJECT_NAME}_default"
 # Default host ports avoid clashing with an existing local :8080 / :8082.
 export GATEWAY_PORT="${GATEWAY_PORT:-18080}"
@@ -32,7 +38,7 @@ command -v docker >/dev/null || { echo "docker required" >&2; exit 1; }
 command -v python3 >/dev/null || { echo "python3 required" >&2; exit 1; }
 command -v curl >/dev/null || { echo "curl required (for static docker CLI in TES/Cromwell)" >&2; exit 1; }
 
-echo "[demo] ensuring Linux docker CLI for Cromwell-in-TES (nested docker runs)..."
+echo "[demo] ensuring Linux docker CLI for Cromwell/Nextflow-in-TES (nested docker runs)..."
 chmod +x "$ROOT/scripts/ensure_docker_cli_static.sh"
 bash "$ROOT/scripts/ensure_docker_cli_static.sh" "$ROOT"
 DOCKER_CLI_HOST="$ROOT/.cache/docker-cli-static/docker"
@@ -113,8 +119,16 @@ echo "[demo] building & starting Ferrum stack (docker compose)..."
 echo "[demo] pre-pull workflow images (best-effort; skip if offline)..."
 docker pull broadinstitute/cromwell:93-0232cbd >/dev/null 2>&1 || true
 docker pull broadinstitute/gatk:4.4.0.0 >/dev/null 2>&1 || true
+NEXTFLOW_IMAGE="nextflow/nextflow:24.10.3"
 if [[ "${FERRUM_GA4GH_ENGINE}" == "nextflow" ]]; then
-  docker pull nextflow/nextflow:latest >/dev/null 2>&1 || true
+  case "$(uname -m)" in
+    arm64 | aarch64)
+      docker pull --platform linux/amd64 "$NEXTFLOW_IMAGE" >/dev/null 2>&1 || true
+      ;;
+    *)
+      docker pull "$NEXTFLOW_IMAGE" >/dev/null 2>&1 || true
+      ;;
+  esac
 fi
 
 echo "[demo] waiting for gateway..."

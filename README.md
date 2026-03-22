@@ -15,7 +15,7 @@ End-to-end, **single-command** artefact that exercises **[Ferrum](https://github
 # or: bash demo/run.sh
 ```
 
-`./run --help` lists CLI flags. **Nextflow:** `./run --nextflow`. **Phase 2 macro (plain vs at-rest Crypt4GH ingest):** `./run --macro`. **DRS client-key micro-timing:** `./run --crypt4gh` with `FERRUM_GA4GH_CRYPT4GH_PUBKEY` set. Resource planning: [docs/RESOURCE-ESTIMATES.md](docs/RESOURCE-ESTIMATES.md).
+`./run --help` lists CLI flags. **Phase 3 — Nextflow parity:** `./run --nextflow` runs the same GATK slice as WDL via **`workflows/tiny_hc.nf`**, WES type `NEXTFLOW`, TES task **`nextflow run workflow.nf`** with **`docker { enabled = true }`** in a run-local `nextflow.config` (see [docs/architecture.md](docs/architecture.md)). Combine with macro: **`./run --nextflow --macro`**. **Phase 2 macro (plain vs at-rest Crypt4GH ingest):** `./run --macro` (WDL) or with Nextflow as above. **DRS client-key micro-timing:** `./run --crypt4gh` with `FERRUM_GA4GH_CRYPT4GH_PUBKEY` set. Resource planning: [docs/RESOURCE-ESTIMATES.md](docs/RESOURCE-ESTIMATES.md).
 
 | Environment | Meaning |
 |-------------|---------|
@@ -24,6 +24,7 @@ End-to-end, **single-command** artefact that exercises **[Ferrum](https://github
 | `FERRUM_GA4GH_ENCRYPT_INGEST` | `1` — single run with `encrypt=true` multipart ingest (requires node keys in gateway). |
 | `FERRUM_GA4GH_CRYPT4GH_PUBKEY` | Optional client public key file for DRS micro-benchmark `X-Crypt4GH-Public-Key` timing. |
 | `FERRUM_GA4GH_RESET_VOLUMES` | `1` (default) wipes compose volumes each run; `0` keeps DB/MinIO between runs. |
+| `FERRUM_TES_DOCKER_PLATFORM` | e.g. `linux/amd64` — on **arm64** hosts the demo defaults this so TES can run **amd64-only** images (Nextflow executor). |
 
 Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`, `drs_micro.json`, optional `phase2_pass_*.json` / `benchmark.phase2_*.json` with `--macro`, hap.py artefacts). Documentation is refreshed automatically.
 
@@ -41,7 +42,7 @@ Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`,
 | `demo/lib/build_wes_payload.py` | WES run JSON for WDL or Nextflow |
 | `drs/mapping.json` | Generated DRS object map |
 | `workflows/tiny_hc.wdl` | Minimal **HaplotypeCaller** WDL (Cromwell via TES) |
-| `workflows/tiny_hc.nf` | Same logic as DSL2 **Nextflow** (Nextflow + `-with-docker` via TES) |
+| `workflows/tiny_hc.nf` | Same logic as DSL2 **Nextflow** (Docker-backed processes via TES) |
 | `scripts/drs_micro_benchmark.py` | Wall-time for DRS `/stream` (plain vs optional Crypt4GH header) |
 | `workflows/cached/` | Dockstore TRS primary descriptor (GATK germline bundle) |
 | `scripts/` | Data + TRS fetch, doc updater |
@@ -56,10 +57,10 @@ Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`,
 | Precision | 1.0 |
 | Recall | 1.0 |
 | F1 | 1.0 |
-| Runtime (demo) | 55 s |
-| WES engine | wdl |
-| DRS stream (median s) | 0.0032104579731822014 |
-| WES run | `01KMA4TCVY6D2B7DTY95FKB4QJ` |
+| Runtime (demo) | 26 s |
+| WES engine | nextflow |
+| DRS stream (median s) | 0.0036585830384865403 |
+| WES run | `01KMAGZS5BTEKQHQ0JTHGQA9XF` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 

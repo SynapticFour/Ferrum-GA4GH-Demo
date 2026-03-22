@@ -1,9 +1,9 @@
 {
-  "input_bam": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMA4TCNAP4XDFKR2RRTN1WNG/stream",
-  "input_bam_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMA4TCP17731JYGX4JA260FP/stream",
-  "ref_fasta": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMA4TCPED2S5CM0QYSSEWQW8/stream",
-  "ref_fasta_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMA4TCPTKNYN3J38DQ821X45/stream",
-  "truth_vcf": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMA4TCQ6M9A9H5YT08VQAPBS/stream",
-  "truth_vcf_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMA4TCQKWHTXX1JTC5TMQGCM/stream",
+  "input_bam": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAGZRZ0Q7K1QDVNYF8Q4E49/stream",
+  "input_bam_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAGZRZRTT3XPJ4SM44QM34V/stream",
+  "ref_fasta": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAGZS0335NT074Q3XK5PNYR/stream",
+  "ref_fasta_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAGZS0HM266WCNPHJ72JB2M/stream",
+  "truth_vcf": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAGZS0WCEJBXNZDCHKPHE7M/stream",
+  "truth_vcf_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAGZS17WCE3ZZST5K2T7MK4/stream",
   "interval": "22:1700-2300"
 }

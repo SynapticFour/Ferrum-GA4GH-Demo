@@ -10,7 +10,9 @@ Alle Angaben sind **Großordnungen** für Planung — abhängig von exakten URLs
 | **HDD/SSD** | ~5–15 GB | Ferrum-Clone-Cache, Images, Subset-Reads/Ref, Compose-Volumes, `results/`, WES-Workdir. |
 | **Transfer (einmalig)** | ~1–5 GB | Öffentliche Downloads (Subset); wiederholte Läufe weniger, wenn Cache erhalten bleibt (`FERRUM_GA4GH_RESET_VOLUMES=0`). |
 
-**Phase 2 (`./run --macro`):** ungefähr **doppelte** Pipeline-Zeit und etwas mehr MinIO-Platz (zwei Sätze DRS-Objekte), ein Compose-Stack.
+**Phase 2 (`./run --macro`):** ungefähr **doppelte** Pipeline-Zeit und etwas mehr MinIO-Platz (zwei Sätze DRS-Objekte), ein Compose-Stack — gilt für **WDL** und **Nextflow** (`./run --nextflow --macro`).
+
+**Nextflow (`./run --nextflow`):** zusätzlich das Image **`nextflow/nextflow:24.10.3`** (fest pin, vor dem Lauf best-effort `docker pull`); **GATK** bleibt dasselbe wie im WDL-Pfad. **Cromwell** entfällt, die Last verschiebt sich leicht auf den Nextflow-Container plus weiterhin **nested Docker** für `container 'broadinstitute/gatk:…'`. Auf **arm64**-Hosts nutzt die Demo **`FERRUM_TES_DOCKER_PLATFORM=linux/amd64`** (Rosetta/QEMU), damit der Nextflow-Executor-Container startet.
 
 ## Geplantes Profil: **volles GIAB** (z. B. HG002 WGS-ähnlich)
 

@@ -162,8 +162,8 @@ impl TesExecutorBackend {
         }
     }
 
-    /// Nextflow on the host bind mount: write `params.json`, run with `-with-docker` so each
-    /// process uses its `container` directive (same GATK image as the WDL path).
+    /// Nextflow on the host bind mount: write `params.json`, minimal `nextflow.config` with
+    /// `docker { enabled = true }` (NF 24+ treats bare `-with-docker` as needing a global image).
     fn nextflow_tes_body(run: &WesRun) -> TesTaskRequest {
         let params_json =
             serde_json::to_string(&run.workflow_params).unwrap_or_else(|_| "{}".to_string());
@@ -176,8 +176,10 @@ impl TesExecutorBackend {
             .expect("FERRUM_WES_WORK_HOST required for Nextflow via TES");
         let host = host.trim_end_matches('/').to_string();
         let host_run = format!("{}/{}", host, run.run_id);
+        // Nextflow does not treat arbitrary http://host URLs like `nextflow run` script sources;
+        // fetch the .nf into the run dir first, then run the local copy.
         let shell = format!(
-            "set -euo pipefail; printf '%s' \"$NF_PARAMS_JSON\" > \"{0}/params.json\" && cd \"{0}\" && nextflow run \"$NF_URL\" -params-file params.json -with-docker",
+            "set -euo pipefail; printf '%s' \"$NF_PARAMS_JSON\" > \"{0}/params.json\" && cd \"{0}\" && (curl -fsSL \"$NF_URL\" -o workflow.nf || wget -qO workflow.nf \"$NF_URL\") && printf '%s\\n' 'docker {{' '    enabled = true' '}}' > nextflow.config && nextflow run workflow.nf -ansi-log false -params-file params.json",
             host_run
         );
         let mut tags = HashMap::new();
@@ -188,7 +190,8 @@ impl TesExecutorBackend {
         })]);
         TesTaskRequest {
             executors: vec![TesExecutor {
-                image: "nextflow/nextflow:latest".to_string(),
+                // Pinned tag (Hub may not publish `latest`; image is amd64-only — use FERRUM_TES_DOCKER_PLATFORM on arm64).
+                image: "nextflow/nextflow:24.10.3".to_string(),
                 command: vec!["/bin/bash".to_string(), "-lc".to_string(), shell],
                 env: Some(env),
             }],
@@ -206,7 +209,7 @@ impl WorkflowExecutor for TesExecutorBackend {
         vec![
             (
                 "Nextflow".to_string(),
-                vec!["22.10".to_string(), "23.04".to_string()],
+                vec!["22.10".to_string(), "23.04".to_string(), "24.10".to_string()],
             ),
             (
                 "CWL".to_string(),

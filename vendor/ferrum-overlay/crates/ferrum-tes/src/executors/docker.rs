@@ -113,10 +113,10 @@ impl TaskExecutor for DockerExecutor {
             host_config: Some(host_config),
             ..Default::default()
         };
-        let opts = CreateContainerOptions {
-            name,
-            platform: None::<String>,
-        };
+        let platform = std::env::var("FERRUM_TES_DOCKER_PLATFORM")
+            .ok()
+            .filter(|s| !s.trim().is_empty());
+        let opts = CreateContainerOptions { name, platform };
         let create = self
             .docker
             .create_container(Some(opts), config)

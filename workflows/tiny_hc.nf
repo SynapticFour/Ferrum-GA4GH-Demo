@@ -13,13 +13,14 @@ process HaplotypeCaller {
     cpus 2
     memory '4 GB'
 
+    // DRS stream URLs share the basename "stream"; stageAs avoids Nextflow input collisions.
     input:
-        path input_bam
-        path input_bam_index
-        path ref_fasta
-        path ref_fasta_index
-        path truth_vcf
-        path truth_vcf_index
+        path input_bam, stageAs: 'drs_input.bam'
+        path input_bam_index, stageAs: 'drs_input.bam.bai'
+        path ref_fasta, stageAs: 'drs_ref.fa'
+        path ref_fasta_index, stageAs: 'drs_ref.fa.fai'
+        path truth_vcf, stageAs: 'drs_truth.vcf.gz'
+        path truth_vcf_index, stageAs: 'drs_truth.vcf.gz.tbi'
         val interval
 
     output:
@@ -44,6 +45,9 @@ process HaplotypeCaller {
             --alleles truth.vcf.gz \\
             --standard-min-confidence-threshold-for-calling 10.0 \\
             --minimum-mapping-quality 0
+        if [[ ! -f output.vcf.gz.tbi ]]; then
+            gatk IndexFeatureFile -I output.vcf.gz
+        fi
         """
 }
 

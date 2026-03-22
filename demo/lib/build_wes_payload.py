@@ -20,7 +20,7 @@ def main() -> None:
     if engine == "nextflow":
         body = {
             "workflow_type": "NEXTFLOW",
-            "workflow_type_version": "23.04",
+            "workflow_type_version": "24.10",
             "workflow_url": wf_url,
             "workflow_params": params,
             "workflow_engine_parameters": {},
