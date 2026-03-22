@@ -1,7 +1,7 @@
 # Reproducibility (paper bundle)
 Generated (UTC): `2026-03-22 13:31:37Z`
 ## Ferrum-GA4GH-Demo
-- **Git commit:** `bf30d14029886052cd484de5e1326e7e08f71045`
+- **Git commit (this snapshot):** run `git log -1 --format=%H -- docs/paper/20260322T1331Z` from the repo root after checkout (stable pointer to the tree that contains this folder).
 - **Branch:** `main`
 
 ## Upstream Ferrum (clone)
