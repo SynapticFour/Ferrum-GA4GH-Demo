@@ -9,6 +9,10 @@ This repository grows in **numbered phases**. Each phase adds a measurable or op
 | **3** | **Nextflow parity** — same GATK window as WDL via `workflows/tiny_hc.nf` and WES `NEXTFLOW` | `./run --nextflow` | Done |
 | **4** | **Documentation & CLI UX** — single entrypoint (`./run`), help text, linked docs, accurate auto-generated benchmark prose | `./run --help`; this file; [README](../README.md), [architecture](./architecture.md) | Done |
 
+## Operations note
+
+**`./run --no-reset`** (or `FERRUM_GA4GH_RESET_VOLUMES=0`) skips `docker compose down -v`. That can speed up iteration but may leave Postgres in a state where **`ferrum-init` migrations** conflict with already-applied SQL. If compose fails after `ferrum-init` exited non-zero, run a **full** `./run` without `--no-reset` to recreate volumes.
+
 ## References
 
 - [Architecture](./architecture.md) — data plane, overlay, TES/WES paths  

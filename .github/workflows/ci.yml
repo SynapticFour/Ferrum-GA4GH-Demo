@@ -1,0 +1,26 @@
+# Lightweight checks — no Docker / no full GA4GH stack (saves CI minutes).
+name: ci
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  scripts-and-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bash syntax (entrypoints + repo shell scripts)
+        run: |
+          set -euo pipefail
+          bash -n run
+          bash -n demo/run.sh
+          while IFS= read -r -d '' f; do
+            bash -n "$f"
+          done < <(find scripts benchmark demo -type f -name '*.sh' -print0 2>/dev/null | sort -z)
+
+      - name: Python (demo lib + scripts)
+        run: python3 -m compileall -q demo/lib scripts

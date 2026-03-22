@@ -23,7 +23,7 @@ End-to-end, **single-command** artefact that exercises **[Ferrum](https://github
 | `FERRUM_GA4GH_MACRO_COMPARE` | `1` — Phase 2 A/B: plain ingest then Crypt4GH-at-rest ingest (`./run --macro`). |
 | `FERRUM_GA4GH_ENCRYPT_INGEST` | `1` — single run with `encrypt=true` multipart ingest (requires node keys in gateway). |
 | `FERRUM_GA4GH_CRYPT4GH_PUBKEY` | Optional client public key file for DRS micro-benchmark `X-Crypt4GH-Public-Key` timing. |
-| `FERRUM_GA4GH_RESET_VOLUMES` | `1` (default) wipes compose volumes each run; `0` keeps DB/MinIO between runs. |
+| `FERRUM_GA4GH_RESET_VOLUMES` | `1` (default) wipes compose volumes each run; `0` keeps DB/MinIO between runs. **`./run --no-reset` sets this** — only use if you know the DB migration state is consistent; otherwise `ferrum-init` may fail when migrations are re-applied against an existing schema. Prefer a full run without `--no-reset` when in doubt. |
 | `FERRUM_TES_DOCKER_PLATFORM` | e.g. `linux/amd64` — on **arm64** hosts the demo defaults this so TES can run **amd64-only** images (Nextflow executor). |
 
 Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`, `drs_micro.json`, optional `phase2_pass_*.json` / `benchmark.phase2_*.json` with `--macro`, hap.py artefacts). Documentation is refreshed automatically.

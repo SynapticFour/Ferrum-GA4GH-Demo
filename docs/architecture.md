@@ -58,6 +58,8 @@ Files under `vendor/ferrum-overlay/` are rsync’d onto a shallow **Ferrum** clo
 
 `demo/run.sh` runs **`git checkout HEAD -- crates/ferrum-drs/src/repo.rs`** after rsync so older clones are not stuck on a removed DRS overlay file.
 
+**Host env typo (intentional):** `demo/run.sh` exports **`FERUM_WES_WORK_HOST`** (one `R`) for the host path and compose variable substitution; `demo/docker-compose.ga4gh.yml` passes **`FERRUM_WES_WORK_HOST`** (two `R`s) **into** the gateway container, which matches what the Rust code reads (`FERRUM_WES_WORK_HOST`).
+
 ## Benchmark
 
 `benchmark/Dockerfile.happy` builds a **linux/amd64** **micromamba** image with **hap.py** (0.3.15) and **rtg-tools** (vcfeval). `benchmark/run_happy.sh` compares `results/query.vcf.gz` to `data/truth_slice.vcf.gz` inside the confident **BED** subset and writes `results/benchmark.json` from `results/happy.metrics.json.gz`.
