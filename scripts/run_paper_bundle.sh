@@ -4,6 +4,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+export PAPER_ROOT="$ROOT"
 export FERRUM_GA4GH_CRYPT4GH_PUBKEY="$ROOT/demo/fixtures/crypt4gh-node/node.pub"
 
 echo "[paper] 1/3 WDL + DRS micro (plain + Crypt4GH header)..."
@@ -17,7 +18,6 @@ cp -f "$ROOT/results/engine_compare.json" "$ROOT/results/_engine_compare_pre_mac
 echo "[paper] 3/3 WDL macro (plaintext vs Crypt4GH-at-rest ingest)..."
 ./run --macro
 
-export PAPER_ROOT="$ROOT"
 python3 <<'PY'
 import json
 import os

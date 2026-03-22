@@ -7,7 +7,14 @@ cd "$ROOT"
 export FERRUM_GA4GH_DEMO_ROOT="$ROOT"
 
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-ferrum-ga4gh-demo}"
-export FERUM_WES_WORK_HOST="${FERUM_WES_WORK_HOST:-$ROOT/results/wes-work}"
+# Host path for WES bind (Docker daemon must see this path). Do not inherit a poisoned shell
+# (e.g. leftover FERUM_WES_WORK_HOST from a compose-config test). Override only explicitly:
+_REPO_WES_DEFAULT="$ROOT/results/wes-work"
+if [[ -n "${FERRUM_GA4GH_WES_HOST_OVERRIDE:-}" ]]; then
+  export FERUM_WES_WORK_HOST="${FERRUM_GA4GH_WES_HOST_OVERRIDE}"
+else
+  export FERUM_WES_WORK_HOST="$_REPO_WES_DEFAULT"
+fi
 # Official nextflow/nextflow images are amd64-only; without this, arm64 hosts fail to create the TES container.
 case "$(uname -m)" in
   arm64 | aarch64)

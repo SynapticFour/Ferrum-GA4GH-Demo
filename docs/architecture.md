@@ -83,7 +83,7 @@ Everything else (Docker TES executor, compose **`FERRUM_GATEWAY_FEATURES=tes-doc
 
 `demo/run.sh` runs **`git checkout`** on paths we no longer overlay so stale patches in `.cache/ferrum` are dropped. DRS is **not** patched.
 
-**Host vs container paths:** host exports **`FERUM_WES_WORK_HOST`**; compose maps the same value into **`FERRUM_WES_TES_WORK_HOST_PREFIX`** for WES→TES volume binds.
+**Host vs container paths:** `demo/run.sh` sets **`FERUM_WES_WORK_HOST`** to **`$REPO/results/wes-work`** (absolute), passed into compose as **`FERRUM_WES_TES_WORK_HOST_PREFIX`**. Custom bind: **`FERRUM_GA4GH_WES_HOST_OVERRIDE`** (absolute path on the Docker host).
 
 ## Benchmark (hap.py)
 

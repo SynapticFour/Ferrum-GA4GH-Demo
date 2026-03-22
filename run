@@ -31,7 +31,8 @@ Environment (also used by demo/run.sh):
   FERRUM_GA4GH_MACRO_COMPARE  set to 1 by --macro (Phase 2 A/B)
   FERRUM_GA4GH_ENCRYPT_INGEST  1 = single run with encrypt=true ingest (requires node keys mount)
   FERRUM_GA4GH_CRYPT4GH_PUBKEY  optional path for DRS micro-benchmark Crypt4GH header
-  GATEWAY_PORT, FERUM_SRC, COMPOSE_PROJECT_NAME, FERRUM_GA4GH_RESET_VOLUMES, FERRUM_TES_DOCKER_PLATFORM, …
+  GATEWAY_PORT, FERUM_SRC, COMPOSE_PROJECT_NAME, FERRUM_GA4GH_RESET_VOLUMES, FERRUM_TES_DOCKER_PLATFORM,
+  FERRUM_GA4GH_WES_HOST_OVERRIDE (optional absolute WES bind on Docker host), …
 EOF
 }
 
