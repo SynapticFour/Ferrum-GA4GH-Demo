@@ -39,7 +39,7 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 | `./run`, `demo/run.sh` | Entrypoints |
 | `demo/docker-compose.ga4gh.yml` | TES, WES workdir, `docker.sock`, Crypt4GH keys |
 | `demo/lib/*.py` | Ingest, WES JSON, metrics, snapshots, `update_engine_compare.py` |
-| `vendor/ferrum-overlay/` | Patched Ferrum crates + gateway Dockerfile (see architecture) |
+| `vendor/ferrum-overlay/` | Minimal Ferrum patches: gateway TES env + small `ferrum-wes` TES submit tweaks (see architecture) |
 | `workflows/tiny_hc.{wdl,nf}` | Minimal HaplotypeCaller |
 | `scripts/` | Fetch, TRS cache, DRS micro-bench, `dataset_profile.py`, `update_docs.py` |
 

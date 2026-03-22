@@ -14,7 +14,7 @@ case "$(uname -m)" in
     export FERRUM_TES_DOCKER_PLATFORM="${FERRUM_TES_DOCKER_PLATFORM:-linux/amd64}"
     ;;
 esac
-export FERRUM_TES_DOCKER_NETWORK="${COMPOSE_PROJECT_NAME}_default"
+export FERRUM_TES_DOCKER_NETWORK_MODE="${COMPOSE_PROJECT_NAME}_default"
 # Default host ports avoid clashing with an existing local :8080 / :8082.
 export GATEWAY_PORT="${GATEWAY_PORT:-18080}"
 export UI_PORT="${UI_PORT:-18082}"
@@ -42,7 +42,8 @@ echo "[demo] ensuring Linux docker CLI for Cromwell/Nextflow-in-TES (nested dock
 chmod +x "$ROOT/scripts/ensure_docker_cli_static.sh"
 bash "$ROOT/scripts/ensure_docker_cli_static.sh" "$ROOT"
 DOCKER_CLI_HOST="$ROOT/.cache/docker-cli-static/docker"
-export FERRUM_TES_EXTRA_BINDS="/var/run/docker.sock:/var/run/docker.sock,${DOCKER_CLI_HOST}:/usr/local/bin/docker:ro"
+export FERRUM_TES_DOCKER_MOUNT_SOCKET=1
+export FERRUM_TES_DOCKER_CLI_HOST_PATH="$DOCKER_CLI_HOST"
 
 FERUM_SRC="${FERUM_SRC:-$ROOT/.cache/ferrum}"
 if [[ ! -d "$FERUM_SRC/.git" ]]; then
@@ -52,8 +53,15 @@ if [[ ! -d "$FERUM_SRC/.git" ]]; then
 fi
 
 echo "[demo] applying GA4GH demo overlay to Ferrum sources..."
+if [[ -d "$FERUM_SRC/.git" ]]; then
+  git -C "$FERUM_SRC" checkout HEAD -- \
+    crates/ferrum-drs/src/repo.rs \
+    crates/ferrum-tes/src/executors/docker.rs \
+    deploy/Dockerfile.gateway \
+    crates/ferrum-gateway/Cargo.toml \
+    2>/dev/null || true
+fi
 rsync -a "$ROOT/vendor/ferrum-overlay/" "$FERUM_SRC/"
-# Overlay no longer ships ferrum-drs repo.rs (upstream fixed access_url); reset if a prior rsync left a stale file.
 if [[ -d "$FERUM_SRC/.git" ]]; then
   git -C "$FERUM_SRC" checkout HEAD -- crates/ferrum-drs/src/repo.rs 2>/dev/null || true
 fi

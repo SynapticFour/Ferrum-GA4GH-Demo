@@ -51,7 +51,7 @@ flowchart TB
 2. **Static HTTP** — `python3 -m http.server` serves `workflows/tiny_hc.{wdl,nf}` via `host.docker.internal` (+ `host-gateway` on Linux).
 3. **DRS** — `POST .../ingest/file`; engines localize `GET .../objects/{id}/stream` on the compose network.
 4. **DRS micro** — `scripts/drs_micro_benchmark.py` → `results/drs_micro.json` (optional `X-Crypt4GH-Public-Key`).
-5. **WES → TES (WDL)** — Cromwell + `inputs.json` under `FERRUM_WES_WORK_HOST/{run_id}`, bind-mounted at the **same host path** inside the Cromwell container. `FERRUM_TES_EXTRA_BINDS`: `docker.sock` + static Linux `docker` CLI (`scripts/ensure_docker_cli_static.sh`).
+5. **WES → TES (WDL)** — Cromwell + `inputs.json` under `{FERRUM_WES_TES_WORK_HOST_PREFIX}/{run_id}` (same path on host and in the task container). Stock Ferrum env: `FERRUM_WES_TES_WDL_BASH_LAUNCH`, `FERRUM_WES_TES_WORK_HOST_PREFIX` (see [Ferrum TES-DOCKER-BACKEND](https://github.com/SynapticFour/Ferrum/blob/main/docs/TES-DOCKER-BACKEND.md)). TES Docker: `FERRUM_TES_DOCKER_MOUNT_SOCKET`, `FERRUM_TES_DOCKER_CLI_HOST_PATH` + static Linux `docker` (`scripts/ensure_docker_cli_static.sh`).
 6. **WES → TES (Nextflow)** — `params.json`, `curl` → `workflow.nf`, `nextflow.config` with `docker { enabled = true }`, then `nextflow run workflow.nf` (no bare `-with-docker`; NF 24+). Image `nextflow/nextflow:24.10.3`.
 7. **Nested GATK** — `docker.sock` + `broadinstitute/gatk:4.4.0.0`.
 
@@ -74,11 +74,16 @@ Extra clone path: `FERUM_SRC` (`.cache/ferrum`) — second checkout only if you 
 
 ## Patch overlay (demo)
 
-`vendor/ferrum-overlay/` is rsync’d onto `.cache/ferrum` before `docker compose build`. Stock Ferrum’s default path uses **noop TES**; this tree adds **Docker TES** (`Dockerfile.gateway` + `tes-docker`), gateway env for **`FERRUM_TES_*`**, and **WES→TES** bodies in **`ferrum-wes`** / executor tweaks in **`ferrum-tes`** (bind-mount `FERRUM_WES_WORK_HOST/{run_id}`, extra binds, network, optional **`FERRUM_TES_DOCKER_PLATFORM`**, Cromwell **`bash -lc`** entrypoint handling).
+`vendor/ferrum-overlay/` is rsync’d onto `.cache/ferrum` before `docker compose build`. It is intentionally small:
 
-DRS is **not** patched; `demo/run.sh` may reset `crates/ferrum-drs/src/repo.rs` after rsync if an old clone had a stale overlay file.
+- **`ferrum-gateway` `main.rs`** — reads **`FERRUM_TES_BACKEND`** / **`FERRUM_TES_WORK_DIR`** (stock binary still defaults to noop TES until this lands upstream).
+- **`ferrum-wes` `executors/tes.rs`** — thin delta on upstream: per-run **`workdir`** when **`FERRUM_WES_TES_WORK_HOST_PREFIX`** + bash/file launch modes are on; pinned Cromwell / Nextflow images; multi-line `nextflow.config` for NF 24+.
 
-**Host vs gateway env:** compose/host uses **`FERUM_WES_WORK_HOST`** for paths; the gateway container receives **`FERRUM_WES_WORK_HOST`** (Rust).
+Everything else (Docker TES executor, compose **`FERRUM_GATEWAY_FEATURES=tes-docker`**, **`FERRUM_TES_DOCKER_*`**, **`FERRUM_WES_TES_*`**) follows [Ferrum](https://github.com/SynapticFour/Ferrum) as documented. Conformance runner: [HelixTest](https://github.com/SynapticFour/HelixTest). Deployment / lab on-ramp: [Ferrum-Lab-Kit](https://github.com/SynapticFour/Ferrum-Lab-Kit).
+
+`demo/run.sh` runs **`git checkout`** on paths we no longer overlay so stale patches in `.cache/ferrum` are dropped. DRS is **not** patched.
+
+**Host vs container paths:** host exports **`FERUM_WES_WORK_HOST`**; compose maps the same value into **`FERRUM_WES_TES_WORK_HOST_PREFIX`** for WES→TES volume binds.
 
 ## Benchmark (hap.py)
 

@@ -357,7 +357,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         )
     });
 
-    // TES: enable when we have a pool. GA4GH demo sets FERRUM_TES_BACKEND=docker (+ docker.sock) for real tasks;
+    // TES: enable when we have a pool. GA4GH demo sets FERRUM_TES_BACKEND=docker for real tasks;
     // default remains noop for stock CI / HelixTest-style environments.
     let tes_backend = std::env::var("FERRUM_TES_BACKEND").unwrap_or_else(|_| "noop".to_string());
     let tes_work_dir = std::env::var("FERRUM_TES_WORK_DIR")
