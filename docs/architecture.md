@@ -15,7 +15,7 @@ flowchart TB
     S3[(MinIO)]
   end
   subgraph Exec[TES execution]
-    C[Cromwell container]
+    C[Cromwell or Nextflow]
     GK[GATK container]
   end
   R -->|multipart ingest| DRS
@@ -35,19 +35,26 @@ flowchart TB
 ## Data plane
 
 1. **Reference + reads + truth** — `scripts/fetch_giab_subset.sh` downloads a **GRCh37** window on **chr22** from public Platinum / GIAB / 1000G endpoints (see `demo/config.yaml`).
-2. **Static HTTP** — `python3 -m http.server` exposes `workflows/tiny_hc.wdl` to **Cromwell** using `host.docker.internal` (plus `host-gateway` extra_hosts on Linux).
-3. **DRS** — Local files are uploaded with `POST /ga4gh/drs/v1/ingest/file`. Cromwell localizes **`GET /ga4gh/drs/v1/objects/{id}/stream`** URLs (`http://ferrum-gateway:8080/...`) so nested tasks read raw bytes from the gateway on the compose network.
-4. **WES → TES** — Ferrum’s WES layer submits a TES task running **broadinstitute/cromwell** with `inputs.json` under a host bind mount. The run directory is mounted at the **same absolute host path** inside Cromwell so nested `docker run -v ...` paths resolve on the host (Docker Desktop–safe). **FERRUM_TES_EXTRA_BINDS** adds `docker.sock` plus a **Linux static `docker` client** (see `scripts/ensure_docker_cli_static.sh`) because the Cromwell image has no Docker CLI.
-5. **Nested GATK** — Cromwell’s `runtime { docker: ... }` blocks spawn **broadinstitute/gatk** via the mounted **docker.sock**.
+2. **Static HTTP** — `python3 -m http.server` exposes `workflows/tiny_hc.wdl` or `tiny_hc.nf` using `host.docker.internal` (plus `host-gateway` extra_hosts on Linux).
+3. **DRS** — Local files are uploaded with `POST /ga4gh/drs/v1/ingest/file`. Engines localize **`GET /ga4gh/drs/v1/objects/{id}/stream`** URLs (`http://ferrum-gateway:8080/...`) on the compose network.
+4. **DRS micro-benchmark** — After ingest, `scripts/drs_micro_benchmark.py` measures wall time for streaming a reference object (default first ~8 MiB), plain and optionally with **`X-Crypt4GH-Public-Key`** (`FERRUM_GA4GH_CRYPT4GH_PUBKEY`). Results merge into `results/metrics.json` as `drs_micro`.
+5. **WES → TES (WDL)** — TES task runs **Cromwell** with `inputs.json` under **`FERRUM_WES_WORK_HOST/{run_id}`**, bind-mounted at the **same absolute host path** inside the Cromwell container (nested `docker run -v` resolves on the host). **FERRUM_TES_EXTRA_BINDS** adds `docker.sock` and a static **Linux `docker` CLI** (`scripts/ensure_docker_cli_static.sh`).
+6. **WES → TES (Nextflow)** — Same bind-mount pattern: `params.json` + `nextflow run … -with-docker` from **nextflow/nextflow**, processes use `container 'broadinstitute/gatk:4.4.0.0'`.
+7. **Nested GATK** — Cromwell `runtime { docker: … }` or Nextflow `-with-docker` spawns **broadinstitute/gatk** via **docker.sock**.
+
+## Macro A/B (Crypt4GH at rest)
+
+End-to-end pipeline comparison **plain vs Crypt4GH-encrypted objects** is a separate dimension from the micro-benchmark: it requires ingest or server config that stores ciphertext and still serves a valid stream. When Ferrum exposes a stable toggle or workflow for that, this demo can add a second `FERRUM_GA4GH_PIPELINE_PROFILE` without changing hap.py goals (metrics over bit-identical VCF).
 
 ## Patch overlay
 
-Files under `vendor/ferrum-overlay/` are rsync’d onto a shallow **Ferrum** clone in `.cache/ferrum` before `docker compose build`. They:
+Files under `vendor/ferrum-overlay/` are rsync’d onto a shallow **Ferrum** clone in `.cache/ferrum` before `docker compose build`. Upstream **gateway** already merges **`FERRUM_STORAGE__*`** into DRS storage config (MinIO / S3). The overlay adds:
 
-- Enable **`FERRUM_TES_BACKEND=docker`** (still defaults to `noop` if unset).
-- Teach the WES→TES client to pass **WDL inputs** and bind **`FERRUM_WES_WORK_HOST/{run_id}`** at the **same absolute path** inside Cromwell as on the host (so nested Docker sees valid host paths).
-- Extend the TES Docker backend with **bind mounts**, **compose network attachment**, optional **extra_hosts** for `host.docker.internal`, and **entrypoint override** so `bash -lc` Cromwell wrappers are not passed to the JVM entrypoint.
-- Patch **DRS** `get_access_url` to accept `access_url` stored as either a JSON string or `{"url":...}` (matches `create_object_with_id`).
+- **`FERRUM_TES_BACKEND`** / **`FERRUM_TES_WORK_DIR`** passed into gateway startup (default **`noop`** if unset — HelixTest / CI).
+- **WES→TES** special-cases for **WDL** and **Nextflow** when **`FERRUM_WES_WORK_HOST`** is set (bind mount run dir, Cromwell or Nextflow entrypoint).
+- **TES Docker executor**: extra binds (**`FERRUM_TES_EXTRA_BINDS`**), compose **network_mode**, **extra_hosts**, **entrypoint/cmd** split for `bash -lc` wrappers, **`Dockerfile.gateway`** builds with **`--features tes-docker`**.
+
+`demo/run.sh` runs **`git checkout HEAD -- crates/ferrum-drs/src/repo.rs`** after rsync so older clones are not stuck on a removed DRS overlay file.
 
 ## Benchmark
 

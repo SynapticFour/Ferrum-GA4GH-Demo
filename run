@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+# One entrypoint from repository root. See README (environment variables).
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
+
+USE_WDL=1
+USE_NEXTFLOW=0
+USE_CRYPT4GH=0
+GIAB_FULL=0
+
+usage() {
+  cat <<'EOF'
+Usage: ./run [options]
+
+  --wdl            Run WDL/Cromwell path via WES→TES (default).
+  --nextflow       Run Nextflow (same GATK logic as tiny_hc.wdl).
+  --crypt4gh       Pass FERRUM_GA4GH_CRYPT4GH_PUBKEY to the DRS micro-benchmark when set
+                   (export path to an ASCII-armored public key). Does not change ingest yet.
+  --plain          Default DRS stream path (implicit).
+  --giab-full      Not implemented — see docs/RESOURCE-ESTIMATES.md for sizing.
+  --no-reset       Keep docker compose volumes (FERRUM_GA4GH_RESET_VOLUMES=0).
+  -h, --help       Show this help.
+
+Environment (also used by demo/run.sh):
+  FERRUM_GA4GH_ENGINE   wdl | nextflow (set by --wdl / --nextflow)
+  FERRUM_GA4GH_CRYPT4GH_PUBKEY  optional path for DRS Crypt4GH header timing
+  GATEWAY_PORT, FERUM_SRC, COMPOSE_PROJECT_NAME, FERRUM_GA4GH_RESET_VOLUMES, …
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --wdl)
+      USE_WDL=1
+      USE_NEXTFLOW=0
+      ;;
+    --nextflow)
+      USE_NEXTFLOW=1
+      USE_WDL=0
+      ;;
+    --crypt4gh)
+      USE_CRYPT4GH=1
+      ;;
+    --plain)
+      USE_CRYPT4GH=0
+      ;;
+    --giab-full)
+      GIAB_FULL=1
+      ;;
+    --no-reset)
+      export FERRUM_GA4GH_RESET_VOLUMES=0
+      ;;
+    *)
+      echo "Unknown option: $1 (try ./run --help)" >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
+
+if [[ "$GIAB_FULL" -eq 1 ]]; then
+  echo "./run: --giab-full is not implemented yet. See docs/RESOURCE-ESTIMATES.md." >&2
+  exit 3
+fi
+
+if [[ "$USE_NEXTFLOW" -eq 1 ]]; then
+  export FERRUM_GA4GH_ENGINE=nextflow
+else
+  export FERRUM_GA4GH_ENGINE=wdl
+fi
+
+if [[ "$USE_CRYPT4GH" -eq 1 ]]; then
+  if [[ -z "${FERRUM_GA4GH_CRYPT4GH_PUBKEY:-}" ]]; then
+    echo "./run: --crypt4gh requires FERRUM_GA4GH_CRYPT4GH_PUBKEY pointing to a public key file." >&2
+    exit 3
+  fi
+  if [[ ! -f "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}" ]]; then
+    echo "./run: FERRUM_GA4GH_CRYPT4GH_PUBKEY is not a file: ${FERRUM_GA4GH_CRYPT4GH_PUBKEY}" >&2
+    exit 3
+  fi
+fi
+
+exec bash "$ROOT/demo/run.sh"

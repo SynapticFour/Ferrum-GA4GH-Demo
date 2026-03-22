@@ -85,7 +85,7 @@ impl TesExecutorBackend {
 
     fn default_image_and_command(workflow_type: &str, workflow_url: &str) -> (String, Vec<String>) {
         match workflow_type.to_lowercase().as_str() {
-            "nextflow" | "nxf" => (
+            "nextflow" | "nxf" | "nfl" => (
                 "nextflow/nextflow:latest".to_string(),
                 vec![
                     "nextflow".to_string(),
@@ -161,6 +161,43 @@ impl TesExecutorBackend {
             volumes,
         }
     }
+
+    /// Nextflow on the host bind mount: write `params.json`, run with `-with-docker` so each
+    /// process uses its `container` directive (same GATK image as the WDL path).
+    fn nextflow_tes_body(run: &WesRun) -> TesTaskRequest {
+        let params_json =
+            serde_json::to_string(&run.workflow_params).unwrap_or_else(|_| "{}".to_string());
+        let mut env = HashMap::new();
+        env.insert("NF_URL".to_string(), run.workflow_url.clone());
+        env.insert("NF_PARAMS_JSON".to_string(), params_json);
+        let host = std::env::var("FERRUM_WES_WORK_HOST")
+            .ok()
+            .filter(|s| !s.trim().is_empty())
+            .expect("FERRUM_WES_WORK_HOST required for Nextflow via TES");
+        let host = host.trim_end_matches('/').to_string();
+        let host_run = format!("{}/{}", host, run.run_id);
+        let shell = format!(
+            "set -euo pipefail; printf '%s' \"$NF_PARAMS_JSON\" > \"{0}/params.json\" && cd \"{0}\" && nextflow run \"$NF_URL\" -params-file params.json -with-docker",
+            host_run
+        );
+        let mut tags = HashMap::new();
+        tags.insert("ferrum_wes_run_id".to_string(), run.run_id.clone());
+        let volumes = Some(vec![serde_json::json!({
+            "hostPath": host_run.clone(),
+            "containerPath": host_run.clone(),
+        })]);
+        TesTaskRequest {
+            executors: vec![TesExecutor {
+                image: "nextflow/nextflow:latest".to_string(),
+                command: vec!["/bin/bash".to_string(), "-lc".to_string(), shell],
+                env: Some(env),
+            }],
+            inputs: None,
+            outputs: None,
+            tags: Some(tags),
+            volumes,
+        }
+    }
 }
 
 #[async_trait]
@@ -195,6 +232,14 @@ impl WorkflowExecutor for TesExecutorBackend {
                 .unwrap_or(false)
         {
             Self::wdl_tes_body(run)
+        } else if (run.workflow_type.eq_ignore_ascii_case("nextflow")
+            || run.workflow_type.eq_ignore_ascii_case("nxf")
+            || run.workflow_type.eq_ignore_ascii_case("nfl"))
+            && std::env::var("FERRUM_WES_WORK_HOST")
+                .map(|s| !s.trim().is_empty())
+                .unwrap_or(false)
+        {
+            Self::nextflow_tes_body(run)
         } else {
             let (image, command) =
                 Self::default_image_and_command(&run.workflow_type, &run.workflow_url);

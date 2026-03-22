@@ -11,10 +11,19 @@ End-to-end, **single-command** artefact that exercises **[Ferrum](https://github
 ## Run
 
 ```bash
-bash demo/run.sh
+./run
+# or: bash demo/run.sh
 ```
 
-Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`, hap.py artefacts). Documentation is refreshed automatically.
+`./run --help` lists CLI flags. **Nextflow:** `./run --nextflow`. **DRS Crypt4GH micro-timing:** set `FERRUM_GA4GH_CRYPT4GH_PUBKEY` and run `./run --crypt4gh`. Resource planning: [docs/RESOURCE-ESTIMATES.md](docs/RESOURCE-ESTIMATES.md).
+
+| Environment | Meaning |
+|-------------|---------|
+| `FERRUM_GA4GH_ENGINE` | `wdl` (default) or `nextflow` — which workflow engine WES submits via TES. |
+| `FERRUM_GA4GH_CRYPT4GH_PUBKEY` | Optional; if set, `scripts/drs_micro_benchmark.py` also times `GET .../stream` with `X-Crypt4GH-Public-Key`. |
+| `FERRUM_GA4GH_RESET_VOLUMES` | `1` (default) wipes compose volumes each run; `0` keeps DB/MinIO between runs. |
+
+Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`, `drs_micro.json`, hap.py artefacts). Documentation is refreshed automatically.
 
 ## Layout
 
@@ -23,9 +32,12 @@ Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`,
 | `demo/run.sh` | Orchestrates clone/patch Ferrum, compose, TRS cache, DRS ingest, WES, benchmark, docs |
 | `demo/config.yaml` | Pinned coordinates / URLs (keep in sync with `scripts/fetch_giab_subset.sh`) |
 | `demo/docker-compose.ga4gh.yml` | Compose overlay: Docker TES + WES workdir bind + docker.sock |
-| `demo/lib/ingest_and_inputs.py` | DRS multipart ingest + Cromwell JSON inputs |
+| `demo/lib/ingest_and_inputs.py` | DRS multipart ingest + WDL `inputs.json` + Nextflow `nf_params.json` |
+| `demo/lib/build_wes_payload.py` | WES run JSON for WDL or Nextflow |
 | `drs/mapping.json` | Generated DRS object map |
-| `workflows/tiny_hc.wdl` | Minimal **HaplotypeCaller** WDL executed via WES→TES |
+| `workflows/tiny_hc.wdl` | Minimal **HaplotypeCaller** WDL (Cromwell via TES) |
+| `workflows/tiny_hc.nf` | Same logic as DSL2 **Nextflow** (Nextflow + `-with-docker` via TES) |
+| `scripts/drs_micro_benchmark.py` | Wall-time for DRS `/stream` (plain vs optional Crypt4GH header) |
 | `workflows/cached/` | Dockstore TRS primary descriptor (GATK germline bundle) |
 | `scripts/` | Data + TRS fetch, doc updater |
 | `benchmark/` | hap.py (micromamba) image + runner |
@@ -39,15 +51,21 @@ Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`,
 | Precision | 1.0 |
 | Recall | 1.0 |
 | F1 | 1.0 |
-| Runtime (demo) | 44 s |
-| WES run | `01KM834NT87Q1CD3S31G6N8R87` |
+| Runtime (demo) | 338 s |
+| WES engine | wdl |
+| DRS stream (median s) | 0.004354625009000301 |
+| WES run | `01KMA40D1DV97AT64NB4FZEB42` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 
 ## Implementation note
 
-Upstream Ferrum defaults to a **noop** TES backend for CI. This repository applies a **small, reproducible overlay** under `vendor/ferrum-overlay/` (configurable `FERRUM_TES_BACKEND`, WDL inputs for Cromwell, Docker volume binds) so the same gateway image can run a real **GATK HaplotypeCaller** task while remaining API-compatible with GA4GH WES/TES.
+Upstream Ferrum defaults to a **noop** TES backend for CI. This repository applies a **small overlay** under `vendor/ferrum-overlay/` (`FERRUM_TES_BACKEND`, **WDL** and **Nextflow** bind-mount paths for WES→TES, Docker volume binds / network for nested engines) so the gateway can run **GATK HaplotypeCaller** while staying GA4GH-compatible. **DRS `access_url` handling** lives in upstream Ferrum (overlay no longer patches `ferrum-drs`); `demo/run.sh` resets `repo.rs` after rsync if an old clone still had a local overlay copy.
 
 ## Licence
 
-Benchmark workflow descriptors follow their upstream licenses (GATK / Dockstore). Ferrum remains under its BUSL-1.1 license; consult each upstream component for redistribution terms.
+**This repository** is licensed under the [Apache License 2.0](LICENSE). That applies to scripts, docs, and demo code here — **not** to [Ferrum](https://github.com/SynapticFour/Ferrum) itself, which remains under **BUSL-1.1**. Benchmark workflow descriptors (e.g. GATK / Dockstore) follow their respective upstream licenses.
+
+---
+
+Built for the **open science** community and for **reproducible GA4GH** benchmarking on top of [Ferrum](https://github.com/SynapticFour/Ferrum). This demo repository is maintained with the same care for clarity and traceability as the upstream project. **Proudly developed by individuals on the autism spectrum in Germany** — we value precision, honest measurement, and documentation you can rely on. © Synaptic Four · Demo code under [Apache-2.0](LICENSE); Ferrum under its own license (see upstream).

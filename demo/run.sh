@@ -22,6 +22,7 @@ PY
 }
 export STATIC_PORT="${STATIC_PORT:-$(pick_free_port)}"
 GATEWAY="http://127.0.0.1:${GATEWAY_PORT}"
+export FERRUM_GA4GH_ENGINE="${FERRUM_GA4GH_ENGINE:-wdl}"
 
 TS_START="$(date +%s)"
 mkdir -p "$FERUM_WES_WORK_HOST" "$ROOT/results" "$ROOT/workflows/cached" "$ROOT/data" "$ROOT/drs"
@@ -45,6 +46,10 @@ fi
 
 echo "[demo] applying GA4GH demo overlay to Ferrum sources..."
 rsync -a "$ROOT/vendor/ferrum-overlay/" "$FERUM_SRC/"
+# Overlay no longer ships ferrum-drs repo.rs (upstream fixed access_url); reset if a prior rsync left a stale file.
+if [[ -d "$FERUM_SRC/.git" ]]; then
+  git -C "$FERUM_SRC" checkout HEAD -- crates/ferrum-drs/src/repo.rs 2>/dev/null || true
+fi
 
 echo "[demo] fetching GIAB / Platinum subset (falls back to synthetic on failure)..."
 set +e
@@ -78,7 +83,15 @@ trap cleanup EXIT
 STATIC_PID=$!
 sleep 1
 
-WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/workflows/tiny_hc.wdl"
+if [[ "${FERRUM_GA4GH_ENGINE}" == "nextflow" ]]; then
+  WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/workflows/tiny_hc.nf"
+  PARAMS_JSON="$ROOT/demo/nf_params.json"
+  echo "[demo] engine=nextflow workflow=$WORKFLOW_URL"
+else
+  WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/workflows/tiny_hc.wdl"
+  PARAMS_JSON="$ROOT/demo/inputs.json"
+  echo "[demo] engine=wdl workflow=$WORKFLOW_URL"
+fi
 
 echo "[demo] building & starting Ferrum stack (docker compose)..."
 (
@@ -96,9 +109,12 @@ echo "[demo] building & starting Ferrum stack (docker compose)..."
     up -d --build
 )
 
-echo "[demo] pre-pull workflow images (Cromwell + GATK; avoids TES 404 on first run)..."
+echo "[demo] pre-pull workflow images (best-effort; skip if offline)..."
 docker pull broadinstitute/cromwell:93-0232cbd >/dev/null 2>&1 || true
 docker pull broadinstitute/gatk:4.4.0.0 >/dev/null 2>&1 || true
+if [[ "${FERRUM_GA4GH_ENGINE}" == "nextflow" ]]; then
+  docker pull nextflow/nextflow:latest >/dev/null 2>&1 || true
+fi
 
 echo "[demo] waiting for gateway..."
 for _ in $(seq 1 90); do
@@ -118,21 +134,18 @@ python3 "$ROOT/demo/lib/ingest_and_inputs.py" \
   "$ROOT/demo/inputs.json" \
   "$INTERVAL"
 
+echo "[demo] DRS stream micro-benchmark (plain + optional Crypt4GH header)..."
+chmod +x "$ROOT/scripts/drs_micro_benchmark.py"
+REF_OID="$(python3 -c "import json; print(json.load(open('$ROOT/drs/mapping.json'))['objects']['ref_fasta']['object_id'])")"
+DRS_MICRO_ARGS=(python3 "$ROOT/scripts/drs_micro_benchmark.py" "$GATEWAY" "$REF_OID" -o "$ROOT/results/drs_micro.json")
+if [[ -n "${FERRUM_GA4GH_CRYPT4GH_PUBKEY:-}" && -f "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}" ]]; then
+  DRS_MICRO_ARGS+=(--crypt4gh-pubkey "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}")
+fi
+"${DRS_MICRO_ARGS[@]}"
+
 WES_PAYLOAD="$ROOT/results/wes_request.json"
-python3 - "$WORKFLOW_URL" "$ROOT/demo/inputs.json" "$WES_PAYLOAD" <<'PY'
-import json, sys
-wf_url = sys.argv[1]
-with open(sys.argv[2]) as f:
-    params = json.load(f)
-body = {
-    "workflow_type": "WDL",
-    "workflow_type_version": "1.0",
-    "workflow_url": wf_url,
-    "workflow_params": params,
-    "workflow_engine_parameters": {},
-}
-open(sys.argv[3], "w").write(json.dumps(body))
-PY
+export FERRUM_GA4GH_ENGINE
+python3 "$ROOT/demo/lib/build_wes_payload.py" "$WORKFLOW_URL" "$PARAMS_JSON" "$WES_PAYLOAD"
 
 echo "[demo] WES submit..."
 SUBMIT="$(curl -fsS -X POST "$GATEWAY/ga4gh/wes/v1/runs" \
@@ -180,19 +193,22 @@ fi
 
 python3 - "$ELAPSED" "$RUN_ID" "$WORKFLOW_URL" "$MEM" "$ROOT/results/metrics.json" <<'PY'
 import json, sys
+from pathlib import Path
+
 elapsed, run_id, wf_url, mem, out = sys.argv[1:6]
-open(out, "w").write(
-    json.dumps(
-        {
-            "pipeline_elapsed_seconds": int(elapsed),
-            "wes_run_id": run_id,
-            "wes_workflow_url": wf_url,
-            "query_vcf": "results/query.vcf.gz",
-            "docker_stats_gateway_sample": mem,
-        },
-        indent=2,
-    )
-)
+engine = __import__("os").environ.get("FERRUM_GA4GH_ENGINE", "wdl")
+data = {
+    "pipeline_elapsed_seconds": int(elapsed),
+    "wes_run_id": run_id,
+    "wes_workflow_url": wf_url,
+    "wes_engine": engine,
+    "query_vcf": "results/query.vcf.gz",
+    "docker_stats_gateway_sample": mem,
+}
+micro = Path("results/drs_micro.json")
+if micro.is_file():
+    data["drs_micro"] = json.loads(micro.read_text())
+open(out, "w").write(json.dumps(data, indent=2))
 PY
 
 echo "[demo] hap.py benchmark..."

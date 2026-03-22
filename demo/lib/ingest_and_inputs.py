@@ -90,7 +90,17 @@ def main() -> None:
         "TinyGermlineHC.interval": interval,
     }
     inputs_out.write_text(json.dumps(inputs, indent=2))
-    print(json.dumps({"ok": True, "object_ids": ids}))
+
+    nf_params = {}
+    for k, v in inputs.items():
+        if k.startswith("TinyGermlineHC."):
+            nf_params[k.split(".", 1)[1]] = v
+        else:
+            nf_params[k] = v
+    nf_params_out = inputs_out.parent / "nf_params.json"
+    nf_params_out.write_text(json.dumps(nf_params, indent=2))
+
+    print(json.dumps({"ok": True, "object_ids": ids, "nf_params": str(nf_params_out)}))
 
 
 if __name__ == "__main__":
