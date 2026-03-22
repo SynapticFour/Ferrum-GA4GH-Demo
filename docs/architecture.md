@@ -72,26 +72,15 @@ Crypt4GH: micro-benchmark = client header timing; macro = extra gateway CPU; Min
 
 Extra clone path: `FERUM_SRC` (`.cache/ferrum`) — second checkout only if you build separately.
 
-## Why the overlay is still required
+## Patch overlay (demo)
 
-Upstream Ferrum defaults to **noop TES** for lightweight CI. This demo’s `vendor/ferrum-overlay/` (rsync’d onto `.cache/ferrum` before `docker compose build`) is **still needed** for:
+`vendor/ferrum-overlay/` is rsync’d onto `.cache/ferrum` before `docker compose build`. Stock Ferrum’s default path uses **noop TES**; this tree adds **Docker TES** (`Dockerfile.gateway` + `tes-docker`), gateway env for **`FERRUM_TES_*`**, and **WES→TES** bodies in **`ferrum-wes`** / executor tweaks in **`ferrum-tes`** (bind-mount `FERRUM_WES_WORK_HOST/{run_id}`, extra binds, network, optional **`FERRUM_TES_DOCKER_PLATFORM`**, Cromwell **`bash -lc`** entrypoint handling).
 
-- **`Dockerfile.gateway`** — `cargo build … --features tes-docker`.
-- **`ferrum-gateway`** — pass **`FERRUM_TES_*` / work-dir** into the process environment.
-- **`ferrum-wes` / `ferrum-tes`** — WES→TES bodies for **Cromwell** and **Nextflow** with **host bind-mount** of `FERRUM_WES_WORK_HOST/{run_id}`; Docker executor **extra binds**, **network_mode**, **extra_hosts**, optional **`FERRUM_TES_DOCKER_PLATFORM`**, **bash `-lc` entrypoint** fix for Cromwell images.
+DRS is **not** patched; `demo/run.sh` may reset `crates/ferrum-drs/src/repo.rs` after rsync if an old clone had a stale overlay file.
 
-DRS `access_url` / `repo.rs` are **not** patched here; `demo/run.sh` resets `crates/ferrum-drs/src/repo.rs` after rsync if an old tree had a stale overlay.
+**Host vs gateway env:** compose/host uses **`FERUM_WES_WORK_HOST`** for paths; the gateway container receives **`FERRUM_WES_WORK_HOST`** (Rust).
 
-**Host vs container env name:** host/export **`FERUM_WES_WORK_HOST`** (compose substitution); gateway receives **`FERRUM_WES_WORK_HOST`** as read by Rust.
-
-## Lessons worth feeding back to Ferrum (and engine authors)
-
-1. **TES defaults** — Document that production-style **Docker TES** + nested workflow engines is opt-in; demo repos need a clear extension path (features, compose env).
-2. **Multi-arch** — Optional **container create `platform`** (here: `FERRUM_TES_DOCKER_PLATFORM`) helps **amd64-only** images (e.g. Nextflow) on **arm64** laptops.
-3. **Nextflow over HTTP** — `nextflow run http://host/.../foo.nf` hit **SCM/Git provider** errors; **fetch to a local `.nf`** + `nextflow run ./foo.nf` is reliable.
-4. **Nextflow 24+ CLI** — Bare **`-with-docker`** without a global image aborts; **`docker { enabled = true }` in `nextflow.config`** + per-process `container` works.
-5. **DRS `/stream` URLs** — Paths often end with **`stream`**; engines that stage by basename see **file collisions** unless workflows use **distinct names** (e.g. Nextflow `stageAs:`).
-6. **Migrations / idempotency** — Re-running **`ferrum-init`** on a non-empty DB caused **“relation already exists”** failures in our **`--no-reset`** experiments; safer **migration versioning** or **init guards** would help self-hosters.
+**Upstream handoff (prompts for Ferrum / HelixTest / lab kit):** [`prompts/`](../prompts/README.md) in this repository — not duplicated here.
 
 ## Benchmark (hap.py)
 
