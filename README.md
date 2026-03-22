@@ -30,7 +30,7 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 | File | Role |
 |------|------|
 | [docs/architecture.md](docs/architecture.md) | Diagram, data plane, overlay, resources |
-| [docs/benchmark.md](docs/benchmark.md) | Last run + GA4GH checklist (auto) |
+| [docs/benchmark.md](docs/benchmark.md) | Last run, GA4GH checklist, **publication-friendly** block (engines, **n**, dataset sizes) |
 
 ## Repository layout
 
@@ -38,10 +38,10 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 |------|------|
 | `./run`, `demo/run.sh` | Entrypoints |
 | `demo/docker-compose.ga4gh.yml` | TES, WES workdir, `docker.sock`, Crypt4GH keys |
-| `demo/lib/*.py` | Ingest, WES JSON, metrics, snapshots |
+| `demo/lib/*.py` | Ingest, WES JSON, metrics, snapshots, `update_engine_compare.py` |
 | `vendor/ferrum-overlay/` | Patched Ferrum crates + gateway Dockerfile (see architecture) |
 | `workflows/tiny_hc.{wdl,nf}` | Minimal HaplotypeCaller |
-| `scripts/` | Fetch, TRS cache, DRS micro-bench, doc update |
+| `scripts/` | Fetch, TRS cache, DRS micro-bench, `dataset_profile.py`, `update_docs.py` |
 
 ## Results snapshot
 
@@ -54,9 +54,13 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 | Runtime (demo) | 56 s |
 | WES engine | wdl |
 | DRS stream (median s) | 0.0033063750015571713 |
+| DRS micro repetitions (n) | 3 |
+| BAM slice (on disk) | 1.89 KiB |
 | WES run | `01KMAHEC37KDR3NDHSVBV4DEPE` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
+
+**Publications / reviewers:** explicit DRS **n**, BAM slice size, **Cromwell vs Nextflow** table → [docs/benchmark.md](docs/benchmark.md#publication-friendly-summary) (refreshed each `./run`).
 
 ## Licence
 

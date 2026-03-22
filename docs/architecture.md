@@ -83,3 +83,5 @@ DRS is **not** patched; `demo/run.sh` may reset `crates/ferrum-drs/src/repo.rs` 
 ## Benchmark (hap.py)
 
 `benchmark/Dockerfile.happy` — linux/amd64 micromamba, hap.py + rtg-tools. `benchmark/run_happy.sh` → `results/benchmark.json`.
+
+Auto-generated **[docs/benchmark.md](./benchmark.md)** also includes **Publication-friendly summary**: DRS micro **n**, on-disk **BAM / ingest totals** (`scripts/dataset_profile.py` → `results/dataset_profile.json`), and **Cromwell vs Nextflow** timings (`demo/lib/update_engine_compare.py` merges each run into `results/engine_compare.json`). Run **`./run`** and **`./run --nextflow`** to fill both engine rows; files under `results/` are gitignored but the markdown is committed after each local run.

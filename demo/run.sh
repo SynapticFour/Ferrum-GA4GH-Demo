@@ -140,7 +140,8 @@ for _ in $(seq 1 90); do
 done
 curl -fsS "$GATEWAY/health" >/dev/null
 
-chmod +x "$ROOT/demo/lib/compose_metrics.py" "$ROOT/demo/lib/record_pass_snapshot.py"
+chmod +x "$ROOT/demo/lib/compose_metrics.py" "$ROOT/demo/lib/record_pass_snapshot.py" \
+  "$ROOT/demo/lib/update_engine_compare.py" "$ROOT/scripts/dataset_profile.py"
 
 # One pass: ingest → DRS micro → WES → hap.py; wall time includes hap.py.
 pipeline_pass() {
@@ -235,6 +236,10 @@ else
   pipeline_pass primary "${FERRUM_GA4GH_ENCRYPT_INGEST:-0}"
   python3 "$ROOT/demo/lib/compose_metrics.py" single "$ROOT"
 fi
+
+echo "[demo] dataset on-disk profile + engine timing merge..."
+python3 "$ROOT/scripts/dataset_profile.py" "$ROOT" || true
+python3 "$ROOT/demo/lib/update_engine_compare.py" "$ROOT" || true
 
 python3 "$ROOT/scripts/update_docs.py" \
   --repo-root "$ROOT" \
