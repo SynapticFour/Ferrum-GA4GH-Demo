@@ -1,5 +1,7 @@
 # Architecture
 
+Phases (what shipped when): [PHASES.md](./PHASES.md).
+
 ```mermaid
 flowchart TB
   subgraph Client

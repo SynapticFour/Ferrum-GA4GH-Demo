@@ -24,6 +24,8 @@ Usage: ./run [options]
   --no-reset       Keep docker compose volumes (FERRUM_GA4GH_RESET_VOLUMES=0).
   -h, --help       Show this help.
 
+Phase overview: docs/PHASES.md
+
 Environment (also used by demo/run.sh):
   FERRUM_GA4GH_ENGINE   wdl | nextflow (set by --wdl / --nextflow)
   FERRUM_GA4GH_MACRO_COMPARE  set to 1 by --macro (Phase 2 A/B)

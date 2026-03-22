@@ -28,6 +28,15 @@ End-to-end, **single-command** artefact that exercises **[Ferrum](https://github
 
 Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`, `drs_micro.json`, optional `phase2_pass_*.json` / `benchmark.phase2_*.json` with `--macro`, hap.py artefacts). Documentation is refreshed automatically.
 
+## Documentation
+
+| Doc | Content |
+|-----|---------|
+| [docs/PHASES.md](docs/PHASES.md) | Phases 1–4 (DRS micro, macro Crypt4GH, Nextflow, docs/CLI) |
+| [docs/architecture.md](docs/architecture.md) | Stack diagram, data plane, overlay, Phase 2 macro |
+| [docs/benchmark.md](docs/benchmark.md) | Last-run hap.py + GA4GH checklist (auto-updated) |
+| [docs/RESOURCE-ESTIMATES.md](docs/RESOURCE-ESTIMATES.md) | RAM, disk, transfer planning |
+
 ## Layout
 
 | Path | Role |
@@ -47,7 +56,7 @@ Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`,
 | `workflows/cached/` | Dockstore TRS primary descriptor (GATK germline bundle) |
 | `scripts/` | Data + TRS fetch, doc updater |
 | `benchmark/` | hap.py (micromamba) image + runner |
-| `docs/` | Auto-updated benchmark + architecture notes |
+| `docs/` | [PHASES](docs/PHASES.md), architecture, auto-updated benchmark, resource estimates |
 
 ## Results snapshot
 
