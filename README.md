@@ -66,10 +66,10 @@ Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`,
 | Precision | 1.0 |
 | Recall | 1.0 |
 | F1 | 1.0 |
-| Runtime (demo) | 26 s |
-| WES engine | nextflow |
-| DRS stream (median s) | 0.0036585830384865403 |
-| WES run | `01KMAGZS5BTEKQHQ0JTHGQA9XF` |
+| Runtime (demo) | 56 s |
+| WES engine | wdl |
+| DRS stream (median s) | 0.0033063750015571713 |
+| WES run | `01KMAHEC37KDR3NDHSVBV4DEPE` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 
