@@ -31,7 +31,6 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 |------|------|
 | [docs/architecture.md](docs/architecture.md) | Diagram, data plane, overlay, resources |
 | [docs/benchmark.md](docs/benchmark.md) | Last run + GA4GH checklist (auto) |
-| [prompts/](prompts/README.md) | Copy-paste prompts for Ferrum / HelixTest / lab kit maintainers |
 
 ## Repository layout
 

@@ -80,8 +80,6 @@ DRS is **not** patched; `demo/run.sh` may reset `crates/ferrum-drs/src/repo.rs` 
 
 **Host vs gateway env:** compose/host uses **`FERUM_WES_WORK_HOST`** for paths; the gateway container receives **`FERRUM_WES_WORK_HOST`** (Rust).
 
-**Upstream handoff (prompts for Ferrum / HelixTest / lab kit):** [`prompts/`](../prompts/README.md) in this repository — not duplicated here.
-
 ## Benchmark (hap.py)
 
 `benchmark/Dockerfile.happy` — linux/amd64 micromamba, hap.py + rtg-tools. `benchmark/run_happy.sh` → `results/benchmark.json`.
