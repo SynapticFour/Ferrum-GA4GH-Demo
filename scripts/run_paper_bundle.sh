@@ -68,7 +68,11 @@ def sh(cmd: list[str]) -> str:
         return f"(unavailable: {e})"
 
 lines.append("## Ferrum-GA4GH-Demo\n")
-lines.append(f"- **Git commit:** `{sh(['git', 'rev-parse', 'HEAD'])}`\n")
+lines.append(
+    "- **Git commit (this snapshot):** run `git log -1 --format=%H -- docs/paper/"
+    + stamp
+    + "` from the repo root after checkout (stable pointer to the tree that contains this folder).\n"
+)
 lines.append(f"- **Branch:** `{sh(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])}`\n")
 
 lines.append("\n## Upstream Ferrum (clone)\n")
@@ -88,6 +92,13 @@ lines.append(f"- **uname:** `{sh(['uname', '-a'])}`\n")
 lines.append(f"- **Python:** `{sys.version.split()[0]}`\n")
 lines.append(f"- **Docker:** `{sh(['docker', '--version'])}`\n")
 lines.append(f"- **Docker Compose:** `{sh(['docker', 'compose', 'version'])}`\n")
+cli_ver = root / ".cache" / "docker-cli-static" / "docker-cli.version"
+if cli_ver.is_file():
+    lines.append(
+        "- **Linux docker CLI (bind-mount into TES / Cromwell):** `"
+        + cli_ver.read_text(encoding="utf-8").strip()
+        + "` (`scripts/ensure_docker_cli_static.sh`, file `.cache/docker-cli-static/docker-cli.version`)\n"
+    )
 
 lines.append("\n## Pinned workflow / executor images (demo)\n")
 lines.append(
