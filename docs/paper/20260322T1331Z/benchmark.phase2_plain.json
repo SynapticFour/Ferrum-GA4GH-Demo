@@ -1,0 +1,6 @@
+{
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1_score": 1.0,
+  "summary_source": "/Users/alexandersenf/devel/SynapticFour/Ferrum-GA4GH-Demo/results/happy.metrics.json.gz"
+}

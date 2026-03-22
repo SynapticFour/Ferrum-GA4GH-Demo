@@ -1,0 +1,14 @@
+{
+  "cromwell_wdl": {
+    "wes_engine": "wdl",
+    "pipeline_elapsed_seconds": 49,
+    "wes_run_id": "01KMAVNTHF1F3KK6ANNS84H3DY",
+    "recorded_at": "2026-03-22 13:28 UTC"
+  },
+  "nextflow": {
+    "wes_engine": "nextflow",
+    "pipeline_elapsed_seconds": 25,
+    "wes_run_id": "01KMAVR7DCA84SRZWSRGWZ0TBS",
+    "recorded_at": "2026-03-22 13:29 UTC"
+  }
+}

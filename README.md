@@ -51,12 +51,12 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 | Precision | 1.0 |
 | Recall | 1.0 |
 | F1 | 1.0 |
-| Runtime (demo) | 56 s |
+| Runtime (demo) | 54 s |
 | WES engine | wdl |
-| DRS stream (median s) | 0.0033063750015571713 |
+| DRS stream (median s) | 0.002868457930162549 |
 | DRS micro repetitions (n) | 3 |
 | BAM slice (on disk) | 1.89 KiB |
-| WES run | `01KMAHEC37KDR3NDHSVBV4DEPE` |
+| WES run | `01KMAVV9D9N3N3DTFB27G8419S` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 

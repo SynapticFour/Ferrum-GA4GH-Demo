@@ -1,0 +1,39 @@
+{
+  "interval": "22:1700-2300",
+  "synthetic_subset": true,
+  "files": {
+    "input_bam": {
+      "path": "data/na12878_slice.bam",
+      "bytes": 1940,
+      "human": "1.89 KiB"
+    },
+    "input_bam_index": {
+      "path": "data/na12878_slice.bam.bai",
+      "bytes": 96,
+      "human": "96 B"
+    },
+    "ref_fasta": {
+      "path": "data/ref_slice.fa",
+      "bytes": 4071,
+      "human": "3.98 KiB"
+    },
+    "ref_fasta_index": {
+      "path": "data/ref_slice.fa.fai",
+      "bytes": 16,
+      "human": "16 B"
+    },
+    "truth_vcf": {
+      "path": "data/truth_slice.vcf.gz",
+      "bytes": 383,
+      "human": "383 B"
+    },
+    "truth_vcf_index": {
+      "path": "data/truth_slice.vcf.gz.tbi",
+      "bytes": 114,
+      "human": "114 B"
+    }
+  },
+  "ingest_total_bytes": 6620,
+  "ingest_total_human": "6.46 KiB",
+  "note": "Sizes are local files before DRS ingest; BAM is the slice used by HaplotypeCaller."
+}

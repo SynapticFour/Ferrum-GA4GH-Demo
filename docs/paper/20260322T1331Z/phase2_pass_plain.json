@@ -1,0 +1,37 @@
+{
+  "label": "plain",
+  "pipeline_elapsed_seconds": 49,
+  "wes_run_id": "01KMAVSSDZ1S843PVH0BJVTPV0",
+  "wes_workflow_url": "http://host.docker.internal:55894/workflows/tiny_hc.wdl",
+  "wes_engine": "wdl",
+  "encrypt_at_ingest": false,
+  "docker_stats_gateway_sample": "11.58MiB / 7.653GiB",
+  "drs_micro": {
+    "drs_stream_url": "http://127.0.0.1:18080/ga4gh/drs/v1/objects/01KMAVSS8JVFVK6ZBXG2FCS8GZ/stream",
+    "object_id": "01KMAVSS8JVFVK6ZBXG2FCS8GZ",
+    "repeat_n": 3,
+    "max_bytes": 8000000,
+    "plain": {
+      "wall_seconds": {
+        "median": 0.003457708051428199,
+        "p95": 0.016926542040891945
+      },
+      "bytes_transferred": 4071,
+      "throughput_mib_s": 1.1228270531649494,
+      "samples": [
+        0.016926542040891945,
+        0.003457708051428199,
+        0.0021172499982640147
+      ]
+    },
+    "crypt4gh": {
+      "error": "Invalid header value b'-----BEGIN CRYPT4GH PUBLIC KEY-----\\nnF3EQxCiLh9nuN5d0xF99q+nWfnfEIsyr+112iU8ziU=\\n-----END CRYPT4GH PUBLIC KEY-----'",
+      "skipped": true
+    }
+  },
+  "hap_py": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0
+  }
+}

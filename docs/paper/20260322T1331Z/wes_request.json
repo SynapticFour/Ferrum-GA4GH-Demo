@@ -1,0 +1,15 @@
+{
+  "workflow_type": "WDL",
+  "workflow_type_version": "1.0",
+  "workflow_url": "http://host.docker.internal:55894/workflows/tiny_hc.wdl",
+  "workflow_params": {
+    "TinyGermlineHC.input_bam": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAVV96E849K4MYKDS2Z55DZ/stream",
+    "TinyGermlineHC.input_bam_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAVV976HKGMXBV5M7N21QQR/stream",
+    "TinyGermlineHC.ref_fasta": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAVV97JBMCEMDWFYA1DEDWM/stream",
+    "TinyGermlineHC.ref_fasta_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAVV97YGV129CEC4DW6KRZT/stream",
+    "TinyGermlineHC.truth_vcf": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAVV9892D9ESVVRNMP0W1VS/stream",
+    "TinyGermlineHC.truth_vcf_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KMAVV98NCE0VSHE5K5SPHET3/stream",
+    "TinyGermlineHC.interval": "22:1700-2300"
+  },
+  "workflow_engine_parameters": {}
+}
