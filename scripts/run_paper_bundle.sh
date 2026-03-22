@@ -114,6 +114,11 @@ lines.append(
     "- **Node keys (demo):** `demo/fixtures/crypt4gh-node/` "
     "(`node.pub` → `FERRUM_GA4GH_CRYPT4GH_PUBKEY`)\n"
 )
+lines.append(
+    "- **DRS micro (`drs_micro.json`):** after macro, keys **`plain`** (cleartext `ref_fasta`), "
+    "**`crypt4gh_at_rest`** (encrypted `ref_fasta`, gateway decrypt on `/stream`), optional **`crypt4gh`** "
+    "(client header timing). See [docs/benchmark.md](docs/benchmark.md#publication-friendly-summary).\n"
+)
 
 lines.append("\n## Paper JSON snapshot\n")
 lines.append(f"- **Directory:** `docs/paper/{stamp}/`\n")

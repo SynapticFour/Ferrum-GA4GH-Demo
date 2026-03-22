@@ -16,21 +16,31 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 |------|--------|
 | *(default)* | WDL / Cromwell path |
 | `--nextflow` | Same GATK slice via `workflows/tiny_hc.nf` |
-| `--macro` | Two passes: plain ingest + Crypt4GH-at-rest (`--nextflow --macro` supported) |
-| `--crypt4gh` | DRS micro-bench with `FERRUM_GA4GH_CRYPT4GH_PUBKEY` (required) |
+| `--macro` | Two passes: plain + Crypt4GH-at-rest ingest; **merges** `results/drs_micro.json` with `plain` + `crypt4gh_at_rest` (+ optional `crypt4gh` if pubkey env set) |
+| `--crypt4gh` | Requires `FERRUM_GA4GH_CRYPT4GH_PUBKEY`: adds optional **client-header** timing to `drs_micro.json` (see [benchmark.md](docs/benchmark.md)) |
 | `--no-reset` | Keep compose volumes — see [architecture → Demo scope](docs/architecture.md#demo-scope-phases) |
 | `--help` | Full usage |
 
 **Environment:** `FERRUM_GA4GH_ENGINE` (`wdl` \| `nextflow`), `FERRUM_GA4GH_MACRO_COMPARE`, `FERRUM_GA4GH_ENCRYPT_INGEST`, `FERRUM_GA4GH_CRYPT4GH_PUBKEY`, `FERRUM_GA4GH_RESET_VOLUMES`, `FERRUM_TES_DOCKER_PLATFORM` (arm64 defaults to `linux/amd64` for Nextflow). See `./run --help`.
 
-**Outputs:** `results/` — `query.vcf.gz`, `benchmark.json`, `metrics.json`, `drs_micro.json`, optional `phase2_*` / `benchmark.phase2_*`. **Docs:** `scripts/update_docs.py` refreshes the table below and [docs/benchmark.md](docs/benchmark.md).
+**Outputs:** `results/` — `query.vcf.gz`, `benchmark.json`, `metrics.json`, **`drs_micro.json`** (see below), optional `phase2_*`, `benchmark.phase2_*`, **`drs_mapping_phase_plain.json`** after `--macro`. **Docs:** `scripts/update_docs.py` refreshes the table below and [docs/benchmark.md](docs/benchmark.md).
+
+### DRS `/stream` micro-benchmark (`drs_micro.json`)
+
+| Key | When |
+|-----|------|
+| **`plain`** | Always (per pass): median wall time for streaming **plaintext** `ref_fasta`. |
+| **`crypt4gh_at_rest`** | After **`./run --macro`**: second `ref_fasta` object (encrypted in MinIO); measures **server-side decrypt** on `GET .../stream`. |
+| **`crypt4gh`** | If **`FERRUM_GA4GH_CRYPT4GH_PUBKEY`** is set (e.g. `demo/fixtures/crypt4gh-node/node.pub`): optional header timing; PEM is sent as **single-line base64**. |
+
+Details, median table, and object-id notes: [docs/benchmark.md → Publication-friendly summary](docs/benchmark.md#publication-friendly-summary).
 
 ## Docs layout
 
 | File | Role |
 |------|------|
 | [docs/architecture.md](docs/architecture.md) | Diagram, data plane, overlay, resources |
-| [docs/benchmark.md](docs/benchmark.md) | Last run, GA4GH checklist, **publication-friendly** block (engines, **n**, dataset sizes) |
+| [docs/benchmark.md](docs/benchmark.md) | Last run, GA4GH checklist, **DRS micro** keys + medians, **publication-friendly** block (engines, **n**, dataset sizes) |
 
 ## Repository layout
 
@@ -53,15 +63,16 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 | F1 | 1.0 |
 | Runtime (demo) | 54 s |
 | WES engine | wdl |
-| DRS stream plain (median s) | 0.008823291049338877 |
-| DRS stream Crypt4GH at-rest (median s) | 0.0022616249043494463 |
+| DRS stream plain `ref_fasta` (median s) | 0.008823291049338877 |
+| DRS stream Crypt4GH **at-rest** (median s, server decrypt) | 0.0022616249043494463 |
+| DRS stream client header `X-Crypt4GH-Public-Key` (median s) | 0.0018515419214963913 |
 | DRS micro repetitions (n) | 3 |
 | BAM slice (on disk) | 1.89 KiB |
 | WES run | `01KMAZBCMWCR9V3XZGW6R5PY45` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 
-**Publications / reviewers:** explicit DRS **n**, BAM slice size, **Cromwell vs Nextflow** table → [docs/benchmark.md](docs/benchmark.md#publication-friendly-summary) (refreshed each `./run`).
+**Publications / reviewers:** DRS micro **plain vs at-rest** (and optional header) medians, explicit **n**, BAM slice size, **Cromwell vs Nextflow** table → [docs/benchmark.md](docs/benchmark.md#publication-friendly-summary) (refreshed each `./run`; run **`./run --macro`** for the merged at-rest leg).
 
 ## Licence
 

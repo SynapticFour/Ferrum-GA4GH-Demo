@@ -70,6 +70,17 @@ flowchart TB
 
 Crypt4GH: DRS micro (macro) = plaintext stream vs at-rest ciphertext + **server decrypt** on `/stream`; optional client-header timing if `FERRUM_GA4GH_CRYPT4GH_PUBKEY` is set. Macro adds extra gateway CPU; MinIO I/O is on the Docker network, not “internet”.
 
+### `results/drs_micro.json` (merged after `./run --macro`)
+
+| Field | Meaning |
+|-------|---------|
+| `plain` | Timings for `GET .../stream` on **plaintext** `ref_fasta` (current pass or plain-phase id). |
+| `crypt4gh_at_rest` | Timings for **encrypted-at-rest** `ref_fasta` (second object id); Ferrum **decrypts while streaming**. |
+| `crypt4gh` | Optional: same plain URL with `X-Crypt4GH-Public-Key` (PEM file is reduced to **one-line base64** in `scripts/drs_micro_benchmark.py`). |
+| `encrypted_object_id` | DRS id of the at-rest `ref_fasta` leg (paired with plain id from `results/drs_mapping_phase_plain.json`). |
+
+Single `./run` (no `--macro`): only the **current** ingest’s `ref_fasta` is timed under `plain`; `crypt4gh_at_rest` is absent unless you pass `--encrypted-object-id` manually. Full reviewer-facing tables: [benchmark.md → Publication-friendly summary](./benchmark.md#publication-friendly-summary).
+
 Extra clone path: `FERUM_SRC` (`.cache/ferrum`) — second checkout only if you build separately.
 
 ## Patch overlay (demo)
@@ -89,4 +100,4 @@ Everything else (Docker TES executor, compose **`FERRUM_GATEWAY_FEATURES=tes-doc
 
 `benchmark/Dockerfile.happy` — linux/amd64 micromamba, hap.py + rtg-tools. `benchmark/run_happy.sh` → `results/benchmark.json`.
 
-Auto-generated **[docs/benchmark.md](./benchmark.md)** also includes **Publication-friendly summary**: DRS micro **n**, on-disk **BAM / ingest totals** (`scripts/dataset_profile.py` → `results/dataset_profile.json`), and **Cromwell vs Nextflow** timings (`demo/lib/update_engine_compare.py` merges each run into `results/engine_compare.json`). Run **`./run`** and **`./run --nextflow`** to fill both engine rows; files under `results/` are gitignored but the markdown is committed after each local run.
+Auto-generated **[docs/benchmark.md](./benchmark.md)** includes the main metrics table (plain / **Crypt4GH at-rest** / optional **client header** medians when present), **Publication-friendly summary** with a **DRS micro JSON keys** table and median rows, DRS micro **n**, on-disk **BAM / ingest totals** (`scripts/dataset_profile.py` → `results/dataset_profile.json`), and **Cromwell vs Nextflow** (`demo/lib/update_engine_compare.py` → `results/engine_compare.json`). Run **`./run`**, **`./run --nextflow`**, and **`./run --macro`** to populate engine compare and merged DRS micro; `results/` is gitignored but the markdown is often committed after local runs.
