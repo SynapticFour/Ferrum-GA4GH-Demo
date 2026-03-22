@@ -1,4 +1,5 @@
 .cache/
+.venv-c4gh/
 data/*.bam
 data/*.bai
 data/*.fa

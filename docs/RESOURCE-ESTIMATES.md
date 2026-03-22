@@ -10,6 +10,8 @@ Alle Angaben sind **Großordnungen** für Planung — abhängig von exakten URLs
 | **HDD/SSD** | ~5–15 GB | Ferrum-Clone-Cache, Images, Subset-Reads/Ref, Compose-Volumes, `results/`, WES-Workdir. |
 | **Transfer (einmalig)** | ~1–5 GB | Öffentliche Downloads (Subset); wiederholte Läufe weniger, wenn Cache erhalten bleibt (`FERRUM_GA4GH_RESET_VOLUMES=0`). |
 
+**Phase 2 (`./run --macro`):** ungefähr **doppelte** Pipeline-Zeit und etwas mehr MinIO-Platz (zwei Sätze DRS-Objekte), ein Compose-Stack.
+
 ## Geplantes Profil: **volles GIAB** (z. B. HG002 WGS-ähnlich)
 
 Hier ist „voll“ gemeint als **große** öffentliche Referenz + **vollständige** BAM/FASTQ wie typische GIAB-WGS-Pakete — **nicht** der kleine Slice aus dem aktuellen `fetch_giab_subset.sh`.

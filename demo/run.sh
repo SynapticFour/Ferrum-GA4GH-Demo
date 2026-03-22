@@ -4,6 +4,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
+export FERRUM_GA4GH_DEMO_ROOT="$ROOT"
 
 export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-ferrum-ga4gh-demo}"
 export FERUM_WES_WORK_HOST="${FERUM_WES_WORK_HOST:-$ROOT/results/wes-work}"
@@ -125,94 +126,101 @@ for _ in $(seq 1 90); do
 done
 curl -fsS "$GATEWAY/health" >/dev/null
 
-echo "[demo] DRS ingest + Cromwell inputs..."
-INTERVAL="$(cat "$ROOT/results/interval.txt")"
-python3 "$ROOT/demo/lib/ingest_and_inputs.py" \
-  "$GATEWAY" \
-  "$ROOT/data" \
-  "$ROOT/drs/mapping.json" \
-  "$ROOT/demo/inputs.json" \
-  "$INTERVAL"
+chmod +x "$ROOT/demo/lib/compose_metrics.py" "$ROOT/demo/lib/record_pass_snapshot.py"
 
-echo "[demo] DRS stream micro-benchmark (plain + optional Crypt4GH header)..."
-chmod +x "$ROOT/scripts/drs_micro_benchmark.py"
-REF_OID="$(python3 -c "import json; print(json.load(open('$ROOT/drs/mapping.json'))['objects']['ref_fasta']['object_id'])")"
-DRS_MICRO_ARGS=(python3 "$ROOT/scripts/drs_micro_benchmark.py" "$GATEWAY" "$REF_OID" -o "$ROOT/results/drs_micro.json")
-if [[ -n "${FERRUM_GA4GH_CRYPT4GH_PUBKEY:-}" && -f "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}" ]]; then
-  DRS_MICRO_ARGS+=(--crypt4gh-pubkey "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}")
-fi
-"${DRS_MICRO_ARGS[@]}"
+# One pass: ingest → DRS micro → WES → hap.py; wall time includes hap.py.
+pipeline_pass() {
+  local pass_label="$1"
+  local enc_flag="$2"
+  export FERRUM_GA4GH_ENCRYPT_INGEST="$enc_flag"
+  echo "[demo] ---------- pass: ${pass_label} (encrypt_ingest=${enc_flag}) ----------"
+  local T0 T1
+  T0="$(date +%s)"
 
-WES_PAYLOAD="$ROOT/results/wes_request.json"
-export FERRUM_GA4GH_ENGINE
-python3 "$ROOT/demo/lib/build_wes_payload.py" "$WORKFLOW_URL" "$PARAMS_JSON" "$WES_PAYLOAD"
+  echo "[demo] DRS ingest + workflow inputs..."
+  INTERVAL="$(cat "$ROOT/results/interval.txt")"
+  python3 "$ROOT/demo/lib/ingest_and_inputs.py" \
+    "$GATEWAY" \
+    "$ROOT/data" \
+    "$ROOT/drs/mapping.json" \
+    "$ROOT/demo/inputs.json" \
+    "$INTERVAL"
 
-echo "[demo] WES submit..."
-SUBMIT="$(curl -fsS -X POST "$GATEWAY/ga4gh/wes/v1/runs" \
-  -H 'Content-Type: application/json' \
-  -d @"$WES_PAYLOAD")"
-RUN_ID="$(python3 -c "import json,sys; print(json.load(sys.stdin)['run_id'])" <<<"$SUBMIT")"
-echo "[demo] run_id=$RUN_ID"
-
-echo "[demo] polling WES..."
-STATE=""
-for _ in $(seq 1 360); do
-  ST="$(curl -fsS "$GATEWAY/ga4gh/wes/v1/runs/${RUN_ID}/status")"
-  STATE="$(python3 -c "import json,sys; print(json.load(sys.stdin)['state'])" <<<"$ST")"
-  echo "  state=$STATE"
-  if [[ "$STATE" == "COMPLETE" ]]; then
-    break
+  echo "[demo] DRS stream micro-benchmark (plain + optional Crypt4GH header)..."
+  chmod +x "$ROOT/scripts/drs_micro_benchmark.py"
+  REF_OID="$(python3 -c "import json; print(json.load(open('$ROOT/drs/mapping.json'))['objects']['ref_fasta']['object_id'])")"
+  DRS_MICRO_ARGS=(python3 "$ROOT/scripts/drs_micro_benchmark.py" "$GATEWAY" "$REF_OID" -o "$ROOT/results/drs_micro.json")
+  if [[ -n "${FERRUM_GA4GH_CRYPT4GH_PUBKEY:-}" && -f "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}" ]]; then
+    DRS_MICRO_ARGS+=(--crypt4gh-pubkey "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}")
   fi
-  if [[ "$STATE" == "EXECUTOR_ERROR" || "$STATE" == "SYSTEM_ERROR" || "$STATE" == "CANCELED" ]]; then
-    echo "$ST" >&2
-    exit 1
+  "${DRS_MICRO_ARGS[@]}"
+
+  WES_PAYLOAD="$ROOT/results/wes_request.json"
+  export FERRUM_GA4GH_ENGINE
+  python3 "$ROOT/demo/lib/build_wes_payload.py" "$WORKFLOW_URL" "$PARAMS_JSON" "$WES_PAYLOAD"
+
+  echo "[demo] WES submit..."
+  SUBMIT="$(curl -fsS -X POST "$GATEWAY/ga4gh/wes/v1/runs" \
+    -H 'Content-Type: application/json' \
+    -d @"$WES_PAYLOAD")"
+  RUN_ID="$(python3 -c "import json,sys; print(json.load(sys.stdin)['run_id'])" <<<"$SUBMIT")"
+  echo "[demo] run_id=$RUN_ID"
+
+  echo "[demo] polling WES..."
+  STATE=""
+  for _ in $(seq 1 360); do
+    ST="$(curl -fsS "$GATEWAY/ga4gh/wes/v1/runs/${RUN_ID}/status")"
+    STATE="$(python3 -c "import json,sys; print(json.load(sys.stdin)['state'])" <<<"$ST")"
+    echo "  state=$STATE"
+    if [[ "$STATE" == "COMPLETE" ]]; then
+      break
+    fi
+    if [[ "$STATE" == "EXECUTOR_ERROR" || "$STATE" == "SYSTEM_ERROR" || "$STATE" == "CANCELED" ]]; then
+      echo "$ST" >&2
+      exit 1
+    fi
+    sleep 5
+  done
+  [[ "$STATE" == "COMPLETE" ]] || { echo "WES did not complete: $STATE" >&2; exit 1; }
+
+  QUERY_VCF="$(find "$FERUM_WES_WORK_HOST/$RUN_ID" -type f \( -name 'output.vcf.gz' -o -name '*.vcf.gz' \) 2>/dev/null | grep -v g.vcf | head -1 || true)"
+  [[ -n "$QUERY_VCF" ]] || QUERY_VCF="$(find "$FERUM_WES_WORK_HOST/$RUN_ID" -type f -name '*.vcf.gz' 2>/dev/null | head -1 || true)"
+  [[ -f "$QUERY_VCF" ]] || { echo "no query VCF under $FERUM_WES_WORK_HOST/$RUN_ID" >&2; find "$FERUM_WES_WORK_HOST/$RUN_ID" | head -50 >&2; exit 1; }
+  cp -f "$QUERY_VCF" "$ROOT/results/query.vcf.gz"
+  echo "[demo] query VCF -> results/query.vcf.gz"
+
+  GW_CID="$(
+    docker compose -p "$COMPOSE_PROJECT_NAME" \
+      -f "$FERUM_SRC/deploy/docker-compose.yml" \
+      -f "$ROOT/demo/docker-compose.ga4gh.yml" \
+      ps -q ferrum-gateway 2>/dev/null | head -1 || true
+  )"
+  MEM="n/a"
+  if [[ -n "$GW_CID" ]]; then
+    MEM="$(docker stats --no-stream --format '{{.MemUsage}}' "$GW_CID" 2>/dev/null || echo n/a)"
   fi
-  sleep 5
-done
-[[ "$STATE" == "COMPLETE" ]] || { echo "WES did not complete: $STATE" >&2; exit 1; }
 
-QUERY_VCF="$(find "$FERUM_WES_WORK_HOST/$RUN_ID" -type f \( -name 'output.vcf.gz' -o -name '*.vcf.gz' \) 2>/dev/null | grep -v g.vcf | head -1 || true)"
-[[ -n "$QUERY_VCF" ]] || QUERY_VCF="$(find "$FERUM_WES_WORK_HOST/$RUN_ID" -type f -name '*.vcf.gz' 2>/dev/null | head -1 || true)"
-[[ -f "$QUERY_VCF" ]] || { echo "no query VCF under $FERUM_WES_WORK_HOST/$RUN_ID" >&2; find "$FERUM_WES_WORK_HOST/$RUN_ID" | head -50 >&2; exit 1; }
-cp -f "$QUERY_VCF" "$ROOT/results/query.vcf.gz"
-echo "[demo] query VCF -> results/query.vcf.gz"
+  echo "[demo] hap.py benchmark..."
+  bash "$ROOT/benchmark/run_happy.sh"
 
-TS_END="$(date +%s)"
-ELAPSED=$((TS_END - TS_START))
+  T1="$(date +%s)"
+  local EL=$((T1 - T0))
 
-GW_CID="$(
-  docker compose -p "$COMPOSE_PROJECT_NAME" \
-    -f "$FERUM_SRC/deploy/docker-compose.yml" \
-    -f "$ROOT/demo/docker-compose.ga4gh.yml" \
-    ps -q ferrum-gateway 2>/dev/null | head -1 || true
-)"
-MEM="n/a"
-if [[ -n "$GW_CID" ]]; then
-  MEM="$(docker stats --no-stream --format '{{.MemUsage}}' "$GW_CID" 2>/dev/null || echo n/a)"
-fi
-
-python3 - "$ELAPSED" "$RUN_ID" "$WORKFLOW_URL" "$MEM" "$ROOT/results/metrics.json" <<'PY'
-import json, sys
-from pathlib import Path
-
-elapsed, run_id, wf_url, mem, out = sys.argv[1:6]
-engine = __import__("os").environ.get("FERRUM_GA4GH_ENGINE", "wdl")
-data = {
-    "pipeline_elapsed_seconds": int(elapsed),
-    "wes_run_id": run_id,
-    "wes_workflow_url": wf_url,
-    "wes_engine": engine,
-    "query_vcf": "results/query.vcf.gz",
-    "docker_stats_gateway_sample": mem,
+  python3 "$ROOT/demo/lib/record_pass_snapshot.py" \
+    "$pass_label" "$EL" "$RUN_ID" "$WORKFLOW_URL" "$MEM" "$ROOT"
 }
-micro = Path("results/drs_micro.json")
-if micro.is_file():
-    data["drs_micro"] = json.loads(micro.read_text())
-open(out, "w").write(json.dumps(data, indent=2))
-PY
 
-echo "[demo] hap.py benchmark..."
-bash "$ROOT/benchmark/run_happy.sh"
+if [[ "${FERRUM_GA4GH_MACRO_COMPARE:-0}" == "1" ]]; then
+  echo "[demo] Phase 2 macro: plain ingest then Crypt4GH-at-rest ingest (same stack, two passes)"
+  pipeline_pass plain 0
+  cp -f "$ROOT/results/benchmark.json" "$ROOT/results/benchmark.phase2_plain.json"
+  pipeline_pass crypt4gh 1
+  cp -f "$ROOT/results/benchmark.json" "$ROOT/results/benchmark.phase2_crypt4gh.json"
+  python3 "$ROOT/demo/lib/compose_metrics.py" macro "$ROOT"
+else
+  pipeline_pass primary "${FERRUM_GA4GH_ENCRYPT_INGEST:-0}"
+  python3 "$ROOT/demo/lib/compose_metrics.py" single "$ROOT"
+fi
 
 python3 "$ROOT/scripts/update_docs.py" \
   --repo-root "$ROOT" \
@@ -221,4 +229,5 @@ python3 "$ROOT/scripts/update_docs.py" \
   --readme "$ROOT/README.md" \
   --bench-md "$ROOT/docs/benchmark.md"
 
-echo "[demo] done in ${ELAPSED}s"
+TOTAL_ELAPSED=$(( $(date +%s) - TS_START ))
+echo "[demo] done (wall clock since script start: ${TOTAL_ELAPSED}s)"

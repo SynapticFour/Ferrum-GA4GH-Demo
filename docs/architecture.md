@@ -42,9 +42,9 @@ flowchart TB
 6. **WES → TES (Nextflow)** — Same bind-mount pattern: `params.json` + `nextflow run … -with-docker` from **nextflow/nextflow**, processes use `container 'broadinstitute/gatk:4.4.0.0'`.
 7. **Nested GATK** — Cromwell `runtime { docker: … }` or Nextflow `-with-docker` spawns **broadinstitute/gatk** via **docker.sock**.
 
-## Macro A/B (Crypt4GH at rest)
+## Phase 2 macro (Crypt4GH at rest)
 
-End-to-end pipeline comparison **plain vs Crypt4GH-encrypted objects** is a separate dimension from the micro-benchmark: it requires ingest or server config that stores ciphertext and still serves a valid stream. When Ferrum exposes a stable toggle or workflow for that, this demo can add a second `FERRUM_GA4GH_PIPELINE_PROFILE` without changing hap.py goals (metrics over bit-identical VCF).
+Set **`FERRUM_GA4GH_MACRO_COMPARE=1`** or **`./run --macro`** to run **two** full passes on the **same** stack: (1) plaintext multipart ingest, (2) **`encrypt=true`** ingest using the node keypair in **`demo/fixtures/crypt4gh-node/`** (mounted into the gateway). Cromwell still calls **`GET .../stream`**; Ferrum decrypts at rest when `storage_references.is_encrypted` is true. Metrics land in **`results/phase2_pass_plain.json`**, **`phase2_pass_crypt4gh.json`**, and **`metrics.json`** → `phase2_macro`. **hap.py** scores are compared for scientific equivalence (not bit-identical VCF).
 
 ## Patch overlay
 

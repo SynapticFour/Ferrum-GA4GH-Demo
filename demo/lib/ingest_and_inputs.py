@@ -3,26 +3,29 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 import urllib.request
 from pathlib import Path
 
 
-def post_multipart_curl(gateway: str, path: Path, name: str) -> str:
+def post_multipart_curl(
+    gateway: str, path: Path, name: str, *, encrypt: bool = False
+) -> str:
     url = f"{gateway.rstrip('/')}/ga4gh/drs/v1/ingest/file"
-    out = subprocess.check_output(
-        [
-            "curl",
-            "-fsS",
-            "-F",
-            f"file=@{path}",
-            "-F",
-            f"name={name}",
-            url,
-        ],
-        text=True,
-    )
+    cmd = [
+        "curl",
+        "-fsS",
+        "-F",
+        f"file=@{path}",
+        "-F",
+        f"name={name}",
+    ]
+    if encrypt:
+        cmd += ["-F", "encrypt=true"]
+    cmd.append(url)
+    out = subprocess.check_output(cmd, text=True)
     return json.loads(out)["id"]
 
 
@@ -43,6 +46,11 @@ def main() -> None:
     mapping_out = Path(sys.argv[3])
     inputs_out = Path(sys.argv[4])
     interval = sys.argv[5] if len(sys.argv) > 5 else "22:16050000-16080000"
+    encrypt = os.environ.get("FERRUM_GA4GH_ENCRYPT_INGEST", "").lower() in (
+        "1",
+        "true",
+        "yes",
+    )
 
     files = {
         "input_bam": data / "na12878_slice.bam",
@@ -58,11 +66,12 @@ def main() -> None:
 
     ids: dict[str, str] = {}
     for logical, path in files.items():
-        oid = post_multipart_curl(gateway, path, path.name)
+        oid = post_multipart_curl(gateway, path, path.name, encrypt=encrypt)
         ids[logical] = oid
 
     mapping = {
         "note": "DRS URIs use the gateway hostname Cromwell containers resolve on the compose network.",
+        "encrypt_at_ingest": encrypt,
         "objects": {
             k: {
                 "drs_uri": f"drs://ferrum-gateway:8080/{v}",

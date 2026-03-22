@@ -8,6 +8,7 @@ cd "$ROOT"
 USE_WDL=1
 USE_NEXTFLOW=0
 USE_CRYPT4GH=0
+USE_MACRO=0
 GIAB_FULL=0
 
 usage() {
@@ -16,8 +17,8 @@ Usage: ./run [options]
 
   --wdl            Run WDL/Cromwell path via WES→TES (default).
   --nextflow       Run Nextflow (same GATK logic as tiny_hc.wdl).
-  --crypt4gh       Pass FERRUM_GA4GH_CRYPT4GH_PUBKEY to the DRS micro-benchmark when set
-                   (export path to an ASCII-armored public key). Does not change ingest yet.
+  --macro          Phase 2: run plain ingest + Crypt4GH-at-rest ingest (two WES+hap passes, same stack).
+  --crypt4gh       Requires FERRUM_GA4GH_CRYPT4GH_PUBKEY for DRS micro-benchmark Crypt4GH header timing.
   --plain          Default DRS stream path (implicit).
   --giab-full      Not implemented — see docs/RESOURCE-ESTIMATES.md for sizing.
   --no-reset       Keep docker compose volumes (FERRUM_GA4GH_RESET_VOLUMES=0).
@@ -25,7 +26,9 @@ Usage: ./run [options]
 
 Environment (also used by demo/run.sh):
   FERRUM_GA4GH_ENGINE   wdl | nextflow (set by --wdl / --nextflow)
-  FERRUM_GA4GH_CRYPT4GH_PUBKEY  optional path for DRS Crypt4GH header timing
+  FERRUM_GA4GH_MACRO_COMPARE  set to 1 by --macro (Phase 2 A/B)
+  FERRUM_GA4GH_ENCRYPT_INGEST  1 = single run with encrypt=true ingest (requires node keys mount)
+  FERRUM_GA4GH_CRYPT4GH_PUBKEY  optional path for DRS micro-benchmark Crypt4GH header
   GATEWAY_PORT, FERUM_SRC, COMPOSE_PROJECT_NAME, FERRUM_GA4GH_RESET_VOLUMES, …
 EOF
 }
@@ -43,6 +46,9 @@ while [[ $# -gt 0 ]]; do
     --nextflow)
       USE_NEXTFLOW=1
       USE_WDL=0
+      ;;
+    --macro)
+      USE_MACRO=1
       ;;
     --crypt4gh)
       USE_CRYPT4GH=1
@@ -73,6 +79,10 @@ if [[ "$USE_NEXTFLOW" -eq 1 ]]; then
   export FERRUM_GA4GH_ENGINE=nextflow
 else
   export FERRUM_GA4GH_ENGINE=wdl
+fi
+
+if [[ "$USE_MACRO" -eq 1 ]]; then
+  export FERRUM_GA4GH_MACRO_COMPARE=1
 fi
 
 if [[ "$USE_CRYPT4GH" -eq 1 ]]; then

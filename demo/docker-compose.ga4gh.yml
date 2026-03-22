@@ -1,8 +1,12 @@
 # GA4GH benchmark overlay: real TES (Docker) + WES workdir on host + Cromwell→GATK (docker.sock).
 # Used as: docker compose -f deploy/docker-compose.yml -f demo/docker-compose.ga4gh.yml
+#
+# FERRUM_GA4GH_DEMO_ROOT must be the absolute path to this demo repo (set by demo/run.sh) so the
+# gateway can read the committed Crypt4GH node keypair for DRS encrypt=true ingest + at-rest decrypt on /stream.
 services:
   ferrum-gateway:
     environment:
+      FERRUM_ENCRYPTION__CRYPT4GH_KEY_DIR: /data/ferrum/keys
       FERRUM_TES_BACKEND: docker
       FERRUM_TES_WORK_DIR: /tmp/tes-jobs
       FERRUM_WES_WORK_DIR: /wes-runs
@@ -13,5 +17,6 @@ services:
       FERRUM_TES_EXTRA_HOSTS: host.docker.internal:host-gateway
       FERRUM_DRS_HOSTNAME: ferrum-gateway:8080
     volumes:
+      - ${FERRUM_GA4GH_DEMO_ROOT:?set FERRUM_GA4GH_DEMO_ROOT to demo repo abs path}/demo/fixtures/crypt4gh-node:/data/ferrum/keys:ro
       - ${FERUM_WES_WORK_HOST}:/wes-runs
       - /var/run/docker.sock:/var/run/docker.sock

@@ -15,15 +15,17 @@ End-to-end, **single-command** artefact that exercises **[Ferrum](https://github
 # or: bash demo/run.sh
 ```
 
-`./run --help` lists CLI flags. **Nextflow:** `./run --nextflow`. **DRS Crypt4GH micro-timing:** set `FERRUM_GA4GH_CRYPT4GH_PUBKEY` and run `./run --crypt4gh`. Resource planning: [docs/RESOURCE-ESTIMATES.md](docs/RESOURCE-ESTIMATES.md).
+`./run --help` lists CLI flags. **Nextflow:** `./run --nextflow`. **Phase 2 macro (plain vs at-rest Crypt4GH ingest):** `./run --macro`. **DRS client-key micro-timing:** `./run --crypt4gh` with `FERRUM_GA4GH_CRYPT4GH_PUBKEY` set. Resource planning: [docs/RESOURCE-ESTIMATES.md](docs/RESOURCE-ESTIMATES.md).
 
 | Environment | Meaning |
 |-------------|---------|
 | `FERRUM_GA4GH_ENGINE` | `wdl` (default) or `nextflow` — which workflow engine WES submits via TES. |
-| `FERRUM_GA4GH_CRYPT4GH_PUBKEY` | Optional; if set, `scripts/drs_micro_benchmark.py` also times `GET .../stream` with `X-Crypt4GH-Public-Key`. |
+| `FERRUM_GA4GH_MACRO_COMPARE` | `1` — Phase 2 A/B: plain ingest then Crypt4GH-at-rest ingest (`./run --macro`). |
+| `FERRUM_GA4GH_ENCRYPT_INGEST` | `1` — single run with `encrypt=true` multipart ingest (requires node keys in gateway). |
+| `FERRUM_GA4GH_CRYPT4GH_PUBKEY` | Optional client public key file for DRS micro-benchmark `X-Crypt4GH-Public-Key` timing. |
 | `FERRUM_GA4GH_RESET_VOLUMES` | `1` (default) wipes compose volumes each run; `0` keeps DB/MinIO between runs. |
 
-Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`, `drs_micro.json`, hap.py artefacts). Documentation is refreshed automatically.
+Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`, `drs_micro.json`, optional `phase2_pass_*.json` / `benchmark.phase2_*.json` with `--macro`, hap.py artefacts). Documentation is refreshed automatically.
 
 ## Layout
 
@@ -31,7 +33,10 @@ Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`,
 |------|------|
 | `demo/run.sh` | Orchestrates clone/patch Ferrum, compose, TRS cache, DRS ingest, WES, benchmark, docs |
 | `demo/config.yaml` | Pinned coordinates / URLs (keep in sync with `scripts/fetch_giab_subset.sh`) |
-| `demo/docker-compose.ga4gh.yml` | Compose overlay: Docker TES + WES workdir bind + docker.sock |
+| `demo/docker-compose.ga4gh.yml` | Compose overlay: TES + WES workdir + `docker.sock` + Crypt4GH node keys mount |
+| `demo/fixtures/crypt4gh-node/` | Non-production **node.sec** / **node.pub** for `encrypt=true` ingest |
+| `demo/lib/compose_metrics.py` | Builds `metrics.json` from pass snapshots (single or Phase 2 macro) |
+| `demo/lib/record_pass_snapshot.py` | Writes `results/phase2_pass_<label>.json` per pipeline pass |
 | `demo/lib/ingest_and_inputs.py` | DRS multipart ingest + WDL `inputs.json` + Nextflow `nf_params.json` |
 | `demo/lib/build_wes_payload.py` | WES run JSON for WDL or Nextflow |
 | `drs/mapping.json` | Generated DRS object map |
@@ -51,10 +56,10 @@ Outputs land under `results/` (`query.vcf.gz`, `benchmark.json`, `metrics.json`,
 | Precision | 1.0 |
 | Recall | 1.0 |
 | F1 | 1.0 |
-| Runtime (demo) | 338 s |
+| Runtime (demo) | 50 s |
 | WES engine | wdl |
-| DRS stream (median s) | 0.004354625009000301 |
-| WES run | `01KMA40D1DV97AT64NB4FZEB42` |
+| DRS stream (median s) | 0.0030049579218029976 |
+| WES run | `01KMA4KJ4N7QZV3NEQQJS605CR` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 
