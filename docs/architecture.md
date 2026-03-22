@@ -1,6 +1,17 @@
 # Architecture
 
-Phases (what shipped when): [PHASES.md](./PHASES.md).
+Technical reference for this demo. **Operator entry:** [README](../README.md) (`./run`, env vars). **Last metrics:** [benchmark.md](./benchmark.md) (auto-generated).
+
+## Demo scope (phases)
+
+| # | What | Run |
+|---|------|-----|
+| 1 | DRS `/stream` micro-timing (optional Crypt4GH client header) | Every pass; `./run --crypt4gh` + `FERRUM_GA4GH_CRYPT4GH_PUBKEY` |
+| 2 | Macro: plain ingest vs Crypt4GH-at-rest | `./run --macro` or `./run --nextflow --macro` |
+| 3 | Nextflow same slice as WDL | `./run --nextflow` |
+| 4 | Docs / `./run --help` / CI smoke | Done |
+
+**`./run --no-reset`** sets `FERRUM_GA4GH_RESET_VOLUMES=0` and skips `compose down -v`. Faster iteration, but **`ferrum-init` migrations** can conflict with an existing DB. If init fails, run a **full** `./run` without `--no-reset`.
 
 ```mermaid
 flowchart TB
@@ -23,7 +34,7 @@ flowchart TB
   R -->|multipart ingest| DRS
   R -->|Dockstore API| TRSnote[Dockstore TRS public API]
   TRSnote -.->|cache WDL| R
-  R -->|POST /runs WDL| WES
+  R -->|POST /runs| WES
   WES -->|POST /tasks| TES
   TES -->|Docker API| C
   C -->|docker.sock| GK
@@ -36,30 +47,52 @@ flowchart TB
 
 ## Data plane
 
-1. **Reference + reads + truth** — `scripts/fetch_giab_subset.sh` downloads a **GRCh37** window on **chr22** from public Platinum / GIAB / 1000G endpoints (see `demo/config.yaml`).
-2. **Static HTTP** — `python3 -m http.server` exposes `workflows/tiny_hc.wdl` or `tiny_hc.nf` using `host.docker.internal` (plus `host-gateway` extra_hosts on Linux).
-3. **DRS** — Local files are uploaded with `POST /ga4gh/drs/v1/ingest/file`. Engines localize **`GET /ga4gh/drs/v1/objects/{id}/stream`** URLs (`http://ferrum-gateway:8080/...`) on the compose network.
-4. **DRS micro-benchmark** — After ingest, `scripts/drs_micro_benchmark.py` measures wall time for streaming a reference object (default first ~8 MiB), plain and optionally with **`X-Crypt4GH-Public-Key`** (`FERRUM_GA4GH_CRYPT4GH_PUBKEY`). Results merge into `results/metrics.json` as `drs_micro`.
-5. **WES → TES (WDL)** — TES task runs **Cromwell** with `inputs.json` under **`FERRUM_WES_WORK_HOST/{run_id}`**, bind-mounted at the **same absolute host path** inside the Cromwell container (nested `docker run -v` resolves on the host). **FERRUM_TES_EXTRA_BINDS** adds `docker.sock` and a static **Linux `docker` CLI** (`scripts/ensure_docker_cli_static.sh`).
-6. **WES → TES (Nextflow)** — Same bind-mount pattern: `params.json`, fetched `workflow.nf`, minimal **`nextflow.config`** (`docker { enabled = true }`), then **`nextflow run workflow.nf`** from **nextflow/nextflow**; processes use `container 'broadinstitute/gatk:4.4.0.0'`.
-7. **Nested GATK** — Cromwell `runtime { docker: … }` or Nextflow with **Docker enabled** spawns **broadinstitute/gatk** via **docker.sock**.
+1. **Data** — `scripts/fetch_giab_subset.sh` + `demo/config.yaml` (GRCh37 chr22 window; synthetic fallback).
+2. **Static HTTP** — `python3 -m http.server` serves `workflows/tiny_hc.{wdl,nf}` via `host.docker.internal` (+ `host-gateway` on Linux).
+3. **DRS** — `POST .../ingest/file`; engines localize `GET .../objects/{id}/stream` on the compose network.
+4. **DRS micro** — `scripts/drs_micro_benchmark.py` → `results/drs_micro.json` (optional `X-Crypt4GH-Public-Key`).
+5. **WES → TES (WDL)** — Cromwell + `inputs.json` under `FERRUM_WES_WORK_HOST/{run_id}`, bind-mounted at the **same host path** inside the Cromwell container. `FERRUM_TES_EXTRA_BINDS`: `docker.sock` + static Linux `docker` CLI (`scripts/ensure_docker_cli_static.sh`).
+6. **WES → TES (Nextflow)** — `params.json`, `curl` → `workflow.nf`, `nextflow.config` with `docker { enabled = true }`, then `nextflow run workflow.nf` (no bare `-with-docker`; NF 24+). Image `nextflow/nextflow:24.10.3`.
+7. **Nested GATK** — `docker.sock` + `broadinstitute/gatk:4.4.0.0`.
 
 ## Phase 2 macro (Crypt4GH at rest)
 
-Set **`FERRUM_GA4GH_MACRO_COMPARE=1`** or **`./run --macro`** to run **two** full passes on the **same** stack: (1) plaintext multipart ingest, (2) **`encrypt=true`** ingest using the node keypair in **`demo/fixtures/crypt4gh-node/`** (mounted into the gateway). Works with **WDL** (default) or **Nextflow** (`./run --nextflow --macro`). The workflow engine still localizes inputs via **`GET .../stream`**; Ferrum decrypts at rest when `storage_references.is_encrypted` is true. Metrics land in **`results/phase2_pass_plain.json`**, **`phase2_pass_crypt4gh.json`**, and **`metrics.json`** → `phase2_macro`. **hap.py** scores are compared for scientific equivalence (not bit-identical VCF).
+`FERRUM_GA4GH_MACRO_COMPARE=1` or `./run --macro`: two passes on one stack — plaintext ingest, then `encrypt=true` using keys in `demo/fixtures/crypt4gh-node/`. WDL or Nextflow. Outputs: `results/phase2_pass_*.json`, `metrics.json` → `phase2_macro`. hap.py checks scientific equivalence, not byte-identical VCF.
 
-## Patch overlay
+## Resource planning (order-of-magnitude)
 
-Files under `vendor/ferrum-overlay/` are rsync’d onto a shallow **Ferrum** clone in `.cache/ferrum` before `docker compose build`. Upstream **gateway** already merges **`FERRUM_STORAGE__*`** into DRS storage config (MinIO / S3). The overlay adds:
+| Profile | RAM | Disk | Transfer (first run) |
+|---------|-----|------|----------------------|
+| **Current subset** | 8–12 GB host | ~5–15 GB | ~1–5 GB |
+| **`./run --macro`** | same | + MinIO objects | ~2× pipeline time |
+| **`./run --nextflow`** | same | + Nextflow image pull | amd64 image; on **arm64** demo sets `FERRUM_TES_DOCKER_PLATFORM=linux/amd64` |
+| **Full GIAB-style WGS** (not implemented; `./run --giab-full`) | 32–64 GB+ | 200 GB–1 TB+ | 50–200 GB+ |
 
-- **`FERRUM_TES_BACKEND`** / **`FERRUM_TES_WORK_DIR`** passed into gateway startup (default **`noop`** if unset — HelixTest / CI).
-- **WES→TES** special-cases for **WDL** and **Nextflow** when **`FERRUM_WES_WORK_HOST`** is set (bind mount run dir, Cromwell or Nextflow entrypoint).
-- **TES Docker executor**: extra binds (**`FERRUM_TES_EXTRA_BINDS`**), compose **network_mode**, **extra_hosts**, optional **`FERRUM_TES_DOCKER_PLATFORM`** (e.g. **`linux/amd64`** on Apple Silicon for **nextflow/nextflow**), **entrypoint/cmd** split for `bash -lc` wrappers, **`Dockerfile.gateway`** builds with **`--features tes-docker`**.
+Crypt4GH: micro-benchmark = client header timing; macro = extra gateway CPU; MinIO I/O is on the Docker network, not “internet”.
 
-`demo/run.sh` runs **`git checkout HEAD -- crates/ferrum-drs/src/repo.rs`** after rsync so older clones are not stuck on a removed DRS overlay file.
+Extra clone path: `FERUM_SRC` (`.cache/ferrum`) — second checkout only if you build separately.
 
-**Host env typo (intentional):** `demo/run.sh` exports **`FERUM_WES_WORK_HOST`** (one `R`) for the host path and compose variable substitution; `demo/docker-compose.ga4gh.yml` passes **`FERRUM_WES_WORK_HOST`** (two `R`s) **into** the gateway container, which matches what the Rust code reads (`FERRUM_WES_WORK_HOST`).
+## Why the overlay is still required
 
-## Benchmark
+Upstream Ferrum defaults to **noop TES** for lightweight CI. This demo’s `vendor/ferrum-overlay/` (rsync’d onto `.cache/ferrum` before `docker compose build`) is **still needed** for:
 
-`benchmark/Dockerfile.happy` builds a **linux/amd64** **micromamba** image with **hap.py** (0.3.15) and **rtg-tools** (vcfeval). `benchmark/run_happy.sh` compares `results/query.vcf.gz` to `data/truth_slice.vcf.gz` inside the confident **BED** subset and writes `results/benchmark.json` from `results/happy.metrics.json.gz`.
+- **`Dockerfile.gateway`** — `cargo build … --features tes-docker`.
+- **`ferrum-gateway`** — pass **`FERRUM_TES_*` / work-dir** into the process environment.
+- **`ferrum-wes` / `ferrum-tes`** — WES→TES bodies for **Cromwell** and **Nextflow** with **host bind-mount** of `FERRUM_WES_WORK_HOST/{run_id}`; Docker executor **extra binds**, **network_mode**, **extra_hosts**, optional **`FERRUM_TES_DOCKER_PLATFORM`**, **bash `-lc` entrypoint** fix for Cromwell images.
+
+DRS `access_url` / `repo.rs` are **not** patched here; `demo/run.sh` resets `crates/ferrum-drs/src/repo.rs` after rsync if an old tree had a stale overlay.
+
+**Host vs container env name:** host/export **`FERUM_WES_WORK_HOST`** (compose substitution); gateway receives **`FERRUM_WES_WORK_HOST`** as read by Rust.
+
+## Lessons worth feeding back to Ferrum (and engine authors)
+
+1. **TES defaults** — Document that production-style **Docker TES** + nested workflow engines is opt-in; demo repos need a clear extension path (features, compose env).
+2. **Multi-arch** — Optional **container create `platform`** (here: `FERRUM_TES_DOCKER_PLATFORM`) helps **amd64-only** images (e.g. Nextflow) on **arm64** laptops.
+3. **Nextflow over HTTP** — `nextflow run http://host/.../foo.nf` hit **SCM/Git provider** errors; **fetch to a local `.nf`** + `nextflow run ./foo.nf` is reliable.
+4. **Nextflow 24+ CLI** — Bare **`-with-docker`** without a global image aborts; **`docker { enabled = true }` in `nextflow.config`** + per-process `container` works.
+5. **DRS `/stream` URLs** — Paths often end with **`stream`**; engines that stage by basename see **file collisions** unless workflows use **distinct names** (e.g. Nextflow `stageAs:`).
+6. **Migrations / idempotency** — Re-running **`ferrum-init`** on a non-empty DB caused **“relation already exists”** failures in our **`--no-reset`** experiments; safer **migration versioning** or **init guards** would help self-hosters.
+
+## Benchmark (hap.py)
+
+`benchmark/Dockerfile.happy` — linux/amd64 micromamba, hap.py + rtg-tools. `benchmark/run_happy.sh` → `results/benchmark.json`.
