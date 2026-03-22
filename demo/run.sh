@@ -243,9 +243,19 @@ pipeline_pass() {
 if [[ "${FERRUM_GA4GH_MACRO_COMPARE:-0}" == "1" ]]; then
   echo "[demo] Phase 2 macro: plain ingest then Crypt4GH-at-rest ingest (same stack, two passes)"
   pipeline_pass plain 0
+  cp -f "$ROOT/drs/mapping.json" "$ROOT/results/drs_mapping_phase_plain.json"
   cp -f "$ROOT/results/benchmark.json" "$ROOT/results/benchmark.phase2_plain.json"
   pipeline_pass crypt4gh 1
   cp -f "$ROOT/results/benchmark.json" "$ROOT/results/benchmark.phase2_crypt4gh.json"
+  echo "[demo] DRS micro: plain vs Crypt4GH-at-rest ref_fasta (same logical file, two object ids)..."
+  PLAIN_REF="$(python3 -c "import json; print(json.load(open('$ROOT/results/drs_mapping_phase_plain.json'))['objects']['ref_fasta']['object_id'])")"
+  ENC_REF="$(python3 -c "import json; print(json.load(open('$ROOT/drs/mapping.json'))['objects']['ref_fasta']['object_id'])")"
+  DRS_MICRO_ARGS=(python3 "$ROOT/scripts/drs_micro_benchmark.py" "$GATEWAY" "$PLAIN_REF" \
+    --encrypted-object-id "$ENC_REF" -o "$ROOT/results/drs_micro.json")
+  if [[ -n "${FERRUM_GA4GH_CRYPT4GH_PUBKEY:-}" && -f "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}" ]]; then
+    DRS_MICRO_ARGS+=(--crypt4gh-pubkey "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}")
+  fi
+  "${DRS_MICRO_ARGS[@]}"
   python3 "$ROOT/demo/lib/compose_metrics.py" macro "$ROOT"
 else
   pipeline_pass primary "${FERRUM_GA4GH_ENCRYPT_INGEST:-0}"

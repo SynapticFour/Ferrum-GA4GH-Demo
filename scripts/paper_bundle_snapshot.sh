@@ -17,7 +17,8 @@ for f in \
   benchmark.phase2_plain.json \
   benchmark.phase2_crypt4gh.json \
   wes_request.json \
-  interval.txt; do
+  interval.txt \
+  drs_mapping_phase_plain.json; do
   if [[ -f "$ROOT/results/$f" ]]; then
     cp -f "$ROOT/results/$f" "$DEST/$f"
   fi

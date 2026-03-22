@@ -25,6 +25,16 @@ def main() -> None:
     if mode == "macro":
         plain = load_pass(root, "plain")
         crypt = load_pass(root, "crypt4gh")
+        merged_micro_path = root / "results" / "drs_micro.json"
+        drs_micro = crypt.get("drs_micro")
+        if merged_micro_path.is_file():
+            try:
+                merged = json.loads(merged_micro_path.read_text(encoding="utf-8"))
+                ar = merged.get("crypt4gh_at_rest")
+                if isinstance(ar, dict) and not ar.get("skipped") and "wall_seconds" in ar:
+                    drs_micro = merged
+            except (OSError, json.JSONDecodeError):
+                pass
         # Primary table = latest (crypt) for backwards compatibility with update_docs defaults
         out = {
             "phase2_macro": {
@@ -38,7 +48,7 @@ def main() -> None:
             "encrypt_at_ingest": True,
             "query_vcf": "results/query.vcf.gz",
             "docker_stats_gateway_sample": crypt.get("docker_stats_gateway_sample"),
-            "drs_micro": crypt.get("drs_micro"),
+            "drs_micro": drs_micro,
         }
     else:
         snap = load_pass(root, "primary")

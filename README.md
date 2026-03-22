@@ -53,10 +53,11 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 | F1 | 1.0 |
 | Runtime (demo) | 54 s |
 | WES engine | wdl |
-| DRS stream (median s) | 0.002868457930162549 |
+| DRS stream plain (median s) | 0.008823291049338877 |
+| DRS stream Crypt4GH at-rest (median s) | 0.0022616249043494463 |
 | DRS micro repetitions (n) | 3 |
 | BAM slice (on disk) | 1.89 KiB |
-| WES run | `01KMAVV9D9N3N3DTFB27G8419S` |
+| WES run | `01KMAZBCMWCR9V3XZGW6R5PY45` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 
