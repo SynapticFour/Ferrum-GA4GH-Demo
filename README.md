@@ -80,4 +80,6 @@ This **repository** is [Apache-2.0](LICENSE). [Ferrum](https://github.com/Synapt
 
 ---
 
-Open science, reproducible GA4GH benchmarking. **Proudly developed by individuals on the autism spectrum in Germany** — precision, honest measurement, documentation you can rely on. © Synaptic Four · [Apache-2.0](LICENSE).
+Open science, reproducible GA4GH benchmarking. **Proudly developed by individuals on the autism spectrum in Germany.** Precision, honest measurement, documentation you can rely on. © Synaptic Four · [Apache-2.0](LICENSE).
+
+This repository documents technical benchmark procedures and results. It does not constitute legal advice, regulatory certification, or a formal compliance determination for any jurisdiction.
