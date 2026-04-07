@@ -10,7 +10,7 @@ Generated (UTC): `2026-03-22 13:31:37Z`
 - **Short:** `27123587`
 
 ## Host
-- **uname:** `Darwin MacBook-Air-von-Alexander 25.3.0 Darwin Kernel Version 25.3.0: Wed Jan 28 20:54:55 PST 2026; root:xnu-12377.91.3~2/RELEASE_ARM64_T8132 arm64`
+- **uname:** `Darwin MacBook-Air-von-Synaptic Four 25.3.0 Darwin Kernel Version 25.3.0: Wed Jan 28 20:54:55 PST 2026; root:xnu-12377.91.3~2/RELEASE_ARM64_T8132 arm64`
 - **Python:** `3.14.3`
 - **Docker:** `Docker version 29.2.1, build a5c7197d72`
 - **Docker Compose:** `Docker Compose version v5.1.0`

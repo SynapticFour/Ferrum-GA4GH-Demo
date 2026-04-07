@@ -2,6 +2,8 @@
 
 Single command to run **[Ferrum](https://github.com/SynapticFour/Ferrum)** **TRS · DRS · WES · TES** on a small **GIAB / Platinum** subset, then **hap.py** vs truth.
 
+> **Legal notice:** This repository documents technical capabilities and operating guidance. It is not legal advice and does not by itself provide regulatory certification or compliance guarantees. Compliance outcomes depend on operator configuration, contracts, and organisational controls.
+
 ## Prerequisites
 
 Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum, images, public data). **Sizing & phases:** [docs/architecture.md](docs/architecture.md).
@@ -80,6 +82,7 @@ This **repository** is [Apache-2.0](LICENSE). [Ferrum](https://github.com/Synapt
 
 ---
 
-Open science, reproducible GA4GH benchmarking. **Proudly developed by individuals on the autism spectrum in Germany.** Precision, honest measurement, documentation you can rely on. © Synaptic Four · [Apache-2.0](LICENSE).
+Built by **Synaptic Four** for transparent, standards-based scientific infrastructure.
+Developed by a neurodiverse team, including autistic engineers, with a focus on precision, clarity, and reliable operations.
+Contact: [contact@synapticfour.com](mailto:contact@synapticfour.com) · [synapticfour.com](https://synapticfour.com)
 
-This repository documents technical benchmark procedures and results. It does not constitute legal advice, regulatory certification, or a formal compliance determination for any jurisdiction.
