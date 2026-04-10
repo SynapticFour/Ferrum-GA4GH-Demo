@@ -16,3 +16,13 @@ __pycache__/
 *.pyc
 .DS_Store
 _ferrum_upstream/
+
+# Generated artifacts and caches
+.svelte-kit/
+.astro/
+coverage/
+dist/
+build/
+target/
+.pytest_cache/
+.ruff_cache/
