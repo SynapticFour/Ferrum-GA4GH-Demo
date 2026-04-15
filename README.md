@@ -2,6 +2,8 @@
 
 Single command to run **[Ferrum](https://github.com/SynapticFour/Ferrum)** **TRS · DRS · WES · TES** on a small **GIAB / Platinum** subset, then **hap.py** vs truth.
 
+Scope boundary: this demo stays **GA4GH benchmark-centric** (TRS/DRS/WES/TES). MII/KDS validation belongs to upstream Ferrum MII Connect and optional Ferrum-Lab-Kit wrapper workflows.
+
 > **Legal notice:** This repository documents technical capabilities and operating guidance. It is not legal advice and does not by itself provide regulatory certification or compliance guarantees. Compliance outcomes depend on operator configuration, contracts, and organisational controls.
 
 ## Prerequisites
