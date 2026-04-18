@@ -42,4 +42,8 @@ futures-util = "0.3"
 [features]
 default = []
 standalone = []
+# Compatibility shim: demo compose passes `--features tes-docker`.
+# Overlay already enables docker support on `ferrum-tes` directly, so this
+# marker feature can remain empty while keeping the build arg valid.
+tes-docker = []
 workspaces_email = ["ferrum-workspaces/email"]

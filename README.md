@@ -65,14 +65,14 @@ Details, median table, and object-id notes: [docs/benchmark.md → Publication-f
 | Precision | 1.0 |
 | Recall | 1.0 |
 | F1 | 1.0 |
-| Runtime (demo) | 54 s |
-| WES engine | wdl |
-| DRS stream plain `ref_fasta` (median s) | 0.008823291049338877 |
-| DRS stream Crypt4GH **at-rest** (median s, server decrypt) | 0.0022616249043494463 |
-| DRS stream client header `X-Crypt4GH-Public-Key` (median s) | 0.0018515419214963913 |
+| Runtime (demo) | 113 s |
+| WES engine | nextflow |
+| DRS stream plain `ref_fasta` (median s) | 0.0073604590143077075 |
+| DRS stream Crypt4GH **at-rest** (median s, server decrypt) | n/a (`./run --macro` merges this) |
+| DRS stream client header `X-Crypt4GH-Public-Key` (median s) | n/a (set `FERRUM_GA4GH_CRYPT4GH_PUBKEY` for header leg) |
 | DRS micro repetitions (n) | 3 |
-| BAM slice (on disk) | 1.89 KiB |
-| WES run | `01KMAZBCMWCR9V3XZGW6R5PY45` |
+| BAM slice (on disk) | 847 B |
+| WES run | `01KPDEK8BTTP01RK8P6040PX3X` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 

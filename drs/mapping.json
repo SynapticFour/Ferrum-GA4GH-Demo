@@ -1,30 +1,30 @@
 {
   "note": "DRS URIs use the gateway hostname Cromwell containers resolve on the compose network.",
-  "encrypt_at_ingest": true,
+  "encrypt_at_ingest": false,
   "objects": {
     "input_bam": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KMAZBCE2VGQE9TE7081K52M9",
-      "object_id": "01KMAZBCE2VGQE9TE7081K52M9"
+      "drs_uri": "drs://ferrum-gateway:8080/01KPDEK7Z4J0QN4E8FYXEHA2KP",
+      "object_id": "01KPDEK7Z4J0QN4E8FYXEHA2KP"
     },
     "input_bam_index": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KMAZBCEVEKQ04AG9WME4P3R3",
-      "object_id": "01KMAZBCEVEKQ04AG9WME4P3R3"
+      "drs_uri": "drs://ferrum-gateway:8080/01KPDEK80K2FAKFGCS7ETR4T16",
+      "object_id": "01KPDEK80K2FAKFGCS7ETR4T16"
     },
     "ref_fasta": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KMAZBCFCBG1QQK3AHT85AXFX",
-      "object_id": "01KMAZBCFCBG1QQK3AHT85AXFX"
+      "drs_uri": "drs://ferrum-gateway:8080/01KPDEK81127Y0R3GFSJMQM3R4",
+      "object_id": "01KPDEK81127Y0R3GFSJMQM3R4"
     },
     "ref_fasta_index": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KMAZBCFRAJPNFAN5WENGZQH7",
-      "object_id": "01KMAZBCFRAJPNFAN5WENGZQH7"
+      "drs_uri": "drs://ferrum-gateway:8080/01KPDEK81ECPEWET2SY31K2SB7",
+      "object_id": "01KPDEK81ECPEWET2SY31K2SB7"
     },
     "truth_vcf": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KMAZBCG7PENG3Y0GF7QVJ686",
-      "object_id": "01KMAZBCG7PENG3Y0GF7QVJ686"
+      "drs_uri": "drs://ferrum-gateway:8080/01KPDEK81YNWVMJ6JXK0AZ99VP",
+      "object_id": "01KPDEK81YNWVMJ6JXK0AZ99VP"
     },
     "truth_vcf_index": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KMAZBCGNH8XNDT4HS8ZCKGEZ",
-      "object_id": "01KMAZBCGNH8XNDT4HS8ZCKGEZ"
+      "drs_uri": "drs://ferrum-gateway:8080/01KPDEK82AZYD4MXTCGVREQVHK",
+      "object_id": "01KPDEK82AZYD4MXTCGVREQVHK"
     }
   }
 }
