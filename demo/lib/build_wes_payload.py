@@ -17,12 +17,15 @@ def main() -> None:
     wf_url, params_path, out_path = sys.argv[1:4]
     engine = os.environ.get("FERRUM_GA4GH_ENGINE", "wdl").strip().lower()
     params = json.loads(open(params_path, encoding="utf-8").read())
+    primary_input_drs_uri = os.environ.get("FERRUM_GA4GH_INPUT_DRS_URI", "").strip()
+    tags = {"input_drs_uri": primary_input_drs_uri} if primary_input_drs_uri else None
     if engine == "nextflow":
         body = {
             "workflow_type": "NEXTFLOW",
             "workflow_type_version": "24.10",
             "workflow_url": wf_url,
             "workflow_params": params,
+            "tags": tags,
             "workflow_engine_parameters": {},
         }
     else:
@@ -31,6 +34,7 @@ def main() -> None:
             "workflow_type_version": "1.0",
             "workflow_url": wf_url,
             "workflow_params": params,
+            "tags": tags,
             "workflow_engine_parameters": {},
         }
     open(out_path, "w", encoding="utf-8").write(json.dumps(body, indent=2))

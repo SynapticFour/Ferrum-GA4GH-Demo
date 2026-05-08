@@ -29,6 +29,8 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 
 **Outputs:** `results/` — `query.vcf.gz`, `benchmark.json`, `metrics.json`, **`drs_micro.json`** (see below), optional `phase2_*`, `benchmark.phase2_*`, **`drs_mapping_phase_plain.json`** after `--macro`. **Docs:** `scripts/update_docs.py` refreshes the table below and [docs/benchmark.md](docs/benchmark.md).
 
+Pipeline input policy: WES requests are **DRS-first** for the primary dataset (`input_drs_uri`) while keeping per-file workflow parameters bound to DRS-backed `/stream` URLs for engine compatibility.
+
 ### DRS `/stream` micro-benchmark (`drs_micro.json`)
 
 | Key | When |
@@ -65,14 +67,14 @@ Details, median table, and object-id notes: [docs/benchmark.md → Publication-f
 | Precision | 1.0 |
 | Recall | 1.0 |
 | F1 | 1.0 |
-| Runtime (demo) | 30 s |
-| WES engine | nextflow |
-| DRS stream plain `ref_fasta` (median s) | 0.010766874998807907 |
+| Runtime (demo) | 199 s |
+| WES engine | wdl |
+| DRS stream plain `ref_fasta` (median s) | 0.004452333999999995 |
 | DRS stream Crypt4GH **at-rest** (median s, server decrypt) | n/a (`./run --macro` merges this) |
 | DRS stream client header `X-Crypt4GH-Public-Key` (median s) | n/a (set `FERRUM_GA4GH_CRYPT4GH_PUBKEY` for header leg) |
 | DRS micro repetitions (n) | 3 |
 | BAM slice (on disk) | 847 B |
-| WES run | `01KPGN3PY1AN257VRBK3NBENM9` |
+| WES run | `01KR38HAZZ9FBWRYZS9CBG1ZW1` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 
@@ -84,7 +86,5 @@ This **repository** is [Apache-2.0](LICENSE). [Ferrum](https://github.com/Synapt
 
 ---
 
-Built by **Synaptic Four** for transparent, standards-based scientific infrastructure.
-Developed by a neurodiverse team, including autistic engineers, with a focus on precision, clarity, and reliable operations.
-Contact: [contact@synapticfour.com](mailto:contact@synapticfour.com) · [synapticfour.com](https://synapticfour.com)
+Synaptic Four · Contact: [contact@synapticfour.com](mailto:contact@synapticfour.com) · [synapticfour.com](https://synapticfour.com)
 

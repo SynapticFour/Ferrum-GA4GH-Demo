@@ -175,6 +175,10 @@ pipeline_pass() {
     "$ROOT/drs/mapping.json" \
     "$ROOT/demo/inputs.json" \
     "$INTERVAL"
+  export FERRUM_GA4GH_INPUT_DRS_URI
+  FERRUM_GA4GH_INPUT_DRS_URI="$(
+    python3 -c "import json; print(json.load(open('$ROOT/drs/mapping.json'))['objects']['input_bam']['drs_uri'])"
+  )"
 
   echo "[demo] DRS stream micro-benchmark (plain + optional Crypt4GH header)..."
   chmod +x "$ROOT/scripts/drs_micro_benchmark.py"

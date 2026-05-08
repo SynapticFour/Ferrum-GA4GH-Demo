@@ -76,6 +76,7 @@ def main() -> None:
             k: {
                 "drs_uri": f"drs://ferrum-gateway:8080/{v}",
                 "object_id": v,
+                "stream_url": drs_stream_http_url(gateway, v),
             }
             for k, v in ids.items()
         },
