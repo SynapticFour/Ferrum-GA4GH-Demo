@@ -123,11 +123,13 @@ echo "[demo] building & starting Ferrum stack (docker compose)..."
     docker compose -p "$COMPOSE_PROJECT_NAME" \
       -f docker-compose.yml \
       -f "$ROOT/demo/docker-compose.ga4gh.yml" \
+      ${AFRICA_OVERLAY:-} \
       down -v --remove-orphans 2>/dev/null || true
   fi
   docker compose -p "$COMPOSE_PROJECT_NAME" \
     -f docker-compose.yml \
     -f "$ROOT/demo/docker-compose.ga4gh.yml" \
+    ${AFRICA_OVERLAY:-} \
     up -d --build
 )
 
@@ -260,15 +262,66 @@ if [[ "${FERRUM_GA4GH_MACRO_COMPARE:-0}" == "1" ]]; then
     DRS_MICRO_ARGS+=(--crypt4gh-pubkey "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}")
   fi
   "${DRS_MICRO_ARGS[@]}"
-  python3 "$ROOT/demo/lib/compose_metrics.py" macro "$ROOT"
 else
   pipeline_pass primary "${FERRUM_GA4GH_ENCRYPT_INGEST:-0}"
-  python3 "$ROOT/demo/lib/compose_metrics.py" single "$ROOT"
 fi
 
 echo "[demo] dataset on-disk profile + engine timing merge..."
 python3 "$ROOT/scripts/dataset_profile.py" "$ROOT" || true
 python3 "$ROOT/demo/lib/update_engine_compare.py" "$ROOT" || true
+
+# ── Africa feature detection + scenarios (always runs; gracefully skips unavailable features) ──
+echo "[demo] detecting Africa features in running Ferrum instance..."
+python3 "$ROOT/demo/lib/africa_feature_detect.py" "$GATEWAY" \
+    > "$ROOT/results/africa_features.json" 2>/dev/null || true
+
+AFRICA_AVAILABLE=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('$ROOT/results/africa_features.json'))
+    print(d.get('available_count', 0))
+except Exception:
+    print(0)
+")
+
+if [[ "$AFRICA_AVAILABLE" -gt 0 ]]; then
+    echo "[demo] Africa features detected ($AFRICA_AVAILABLE available). Running scenarios..."
+    python3 - <<PYEOF
+import sys, json
+sys.path.insert(0, '$ROOT/demo/lib')
+from africa_feature_detect import detect
+from africa_scenarios import run_all
+from pathlib import Path
+
+root = Path('$ROOT')
+gateway = '$GATEWAY'
+fs = detect(gateway)
+results = run_all(gateway, root, fs)
+(root / 'results' / 'africa_results.json').write_text(
+    json.dumps(results, indent=2), encoding='utf-8'
+)
+print(json.dumps({"ok": True, "summary": results["summary"]}))
+PYEOF
+else
+    echo "[demo] No Africa features detected in this Ferrum build. Skipping Africa scenarios."
+    echo "[demo] To enable Africa features, apply the Africa Cursor Prompts to Ferrum upstream."
+    python3 -c "
+import json
+from pathlib import Path
+Path('$ROOT/results/africa_results.json').write_text(
+    json.dumps({'detected_features': {}, 'available_count': 0,
+                'scenarios': {}, 'summary': {'ran': 0, 'skipped': 6, 'errors': 0,
+                'all_passed': True, 'note': 'No Africa features in this Ferrum build'}},
+    indent=2), encoding='utf-8')
+"
+fi
+
+if [[ "${FERRUM_GA4GH_MACRO_COMPARE:-0}" == "1" ]]; then
+  METRICS_MODE=macro
+else
+  METRICS_MODE=single
+fi
+python3 "$ROOT/demo/lib/compose_metrics.py" "$METRICS_MODE" "$ROOT"
 
 python3 "$ROOT/scripts/update_docs.py" \
   --repo-root "$ROOT" \

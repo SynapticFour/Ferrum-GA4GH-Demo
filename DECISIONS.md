@@ -12,6 +12,19 @@ Track important architectural and operational decisions here.
 
 ---
 
+### 2026-06-03 - Africa feature integration strategy: detect-and-degrade
+
+- **Context:** Ferrum Africa features are implemented progressively upstream.
+  The demo needs to test them without breaking the existing EU/GA4GH benchmark.
+- **Decision:** Feature detection via HTTP probes after gateway starts. Scenarios
+  run only for detected features. Missing features produce `{"skipped": true}`
+  entries. The main `./run` invariant is never broken.
+- **Consequences:** Demo always works regardless of Ferrum build. Africa coverage
+  grows as upstream implements features. No separate demo repository needed.
+  The `--africa` flag is optional and additive.
+
+---
+
 ### 2026-06-12 - Simulation-first, then real hardware (Village Network)
 
 - **Context:** Field labs in Africa need federated Beacon demos without shipping two Pis to every reviewer; physical Pi installs must stay under 10 minutes.

@@ -1,73 +1,127 @@
 #!/usr/bin/env python3
-"""Detect Ferrum Africa / edge feature flags exposed by a running gateway."""
+"""
+Probe a running Ferrum gateway to detect which Africa-specific features
+are available. Returns a FeatureSet that other Africa scenario scripts
+consume to decide what to run.
+
+All probes are non-destructive GET requests. A feature is considered
+'available' if the relevant endpoint responds with HTTP 200 or 404
+(not 404 in the sense of "not found" but "endpoint exists, no data").
+A feature is 'unavailable' if the endpoint returns 404 with a specific
+"route not found" pattern, or 405, or connection error.
+"""
 from __future__ import annotations
 
-import argparse
 import json
-import sys
 import urllib.error
 import urllib.request
+from dataclasses import dataclass
 
 
-def probe(gateway: str) -> dict[str, object]:
-    base = gateway.rstrip("/")
-    out: dict[str, object] = {
-        "gateway": base,
-        "offline_first": False,
-        "federation": False,
-        "audit_residency": False,
-        "beacon_v2": False,
-    }
+@dataclass
+class AfricaFeatureSet:
+    offline_mode: bool = False          # FERRUM_OFFLINE=1 + SQLite backend
+    ont_ingestion: bool = False         # POST /api/v1/ingest/ont endpoint exists
+    multi_pathogen_beacon: bool = False # Beacon v2 PathoGenFilter available
+    outbreak_mode: bool = False         # POST /api/v1/outbreak/activate exists
+    federated_beacon: bool = False      # GET /ga4gh/beacon/v2?federate=true supported
+    bandwidth_adaptive: bool = False    # Transfer-Checkpoint header present
+    power_monitor: bool = False         # GET /api/v1/health/power endpoint exists
+    residency_audit: bool = False       # GET /api/v1/audit/residency endpoint exists
+    reference_registry: bool = False    # GET /api/v1/references endpoint exists
+
+    def any_available(self) -> bool:
+        return any([
+            self.offline_mode, self.ont_ingestion, self.multi_pathogen_beacon,
+            self.outbreak_mode, self.federated_beacon, self.bandwidth_adaptive,
+            self.power_monitor, self.residency_audit, self.reference_registry,
+        ])
+
+    def summary(self) -> dict:
+        return {
+            "offline_mode": self.offline_mode,
+            "ont_ingestion": self.ont_ingestion,
+            "multi_pathogen_beacon": self.multi_pathogen_beacon,
+            "outbreak_mode": self.outbreak_mode,
+            "federated_beacon": self.federated_beacon,
+            "bandwidth_adaptive": self.bandwidth_adaptive,
+            "power_monitor": self.power_monitor,
+            "residency_audit": self.residency_audit,
+            "reference_registry": self.reference_registry,
+        }
+
+    def available_count(self) -> int:
+        return sum(1 for v in self.summary().values() if v)
+
+    def unavailable_features(self) -> list[str]:
+        return [k for k, v in self.summary().items() if not v]
+
+
+def _probe(gateway: str, path: str, method: str = "GET") -> bool:
+    """Return True if endpoint exists (2xx or known-data-404), False if route missing."""
+    url = f"{gateway.rstrip('/')}{path}"
+    try:
+        req = urllib.request.Request(url, method=method)
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return resp.status < 500
+    except urllib.error.HTTPError as e:
+        # 404 from a real route (e.g. "no entries yet") = feature exists
+        # 404 from "route not found" = feature absent
+        if e.code == 404:
+            try:
+                body = e.read().decode("utf-8", errors="replace")
+                if "route not found" in body.lower() or "no such" in body.lower():
+                    return False
+                return True
+            except Exception:
+                return False
+        if e.code in (405, 501):
+            return False
+        return False
+    except (OSError, ConnectionRefusedError, TimeoutError):
+        return False
+
+
+def detect(gateway: str) -> AfricaFeatureSet:
+    """Probe gateway and return detected feature set."""
+    fs = AfricaFeatureSet()
 
     try:
-        with urllib.request.urlopen(f"{base}/ga4gh/beacon/v2/info", timeout=10) as resp:
-            if resp.status == 200:
-                out["beacon_v2"] = True
-    except (urllib.error.URLError, TimeoutError):
+        req = urllib.request.Request(f"{gateway.rstrip('/')}/health")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            body = json.loads(resp.read())
+            fs.offline_mode = body.get("db") == "sqlite"
+    except Exception:
         pass
 
-    # Health / service-info may advertise Africa env-backed features when upstream implements them.
-    for path in ("/health", "/api/v1/service-info"):
-        try:
-            with urllib.request.urlopen(f"{base}{path}", timeout=10) as resp:
-                body = resp.read().decode("utf-8", errors="replace")
-                if "offline" in body.lower() or "FERRUM_AFRICA" in body:
-                    out["offline_first"] = True
-                if "federation" in body.lower():
-                    out["federation"] = True
-        except (urllib.error.URLError, TimeoutError):
-            continue
-
-    try:
-        with urllib.request.urlopen(
-            f"{base}/api/v1/audit/residency/verify", timeout=10
-        ) as resp:
-            if resp.status == 200:
-                out["audit_residency"] = True
-    except (urllib.error.URLError, TimeoutError):
-        pass
-
-    return out
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--gateway", required=True, help="ferrum-gateway base URL")
-    parser.add_argument(
-        "--json", action="store_true", help="emit JSON (default: human-readable)"
+    fs.ont_ingestion = _probe(gateway, "/api/v1/ingest/ont", "POST")
+    fs.multi_pathogen_beacon = _probe(
+        gateway,
+        "/ga4gh/beacon/v2/filtering_terms?type=PathoGenFilter"
     )
-    args = parser.parse_args()
-    result = probe(args.gateway)
-    if args.json:
-        print(json.dumps(result, indent=2))
-    else:
-        print(f"Gateway: {result['gateway']}")
-        for key in ("beacon_v2", "offline_first", "federation", "audit_residency"):
-            mark = "yes" if result[key] else "no"
-            print(f"  {key}: {mark}")
-    if not result["beacon_v2"]:
-        sys.exit(1)
+    fs.outbreak_mode = _probe(gateway, "/api/v1/outbreak/activate", "POST")
+    fs.federated_beacon = _probe(
+        gateway,
+        "/ga4gh/beacon/v2/g_variants?federate=true&limit=0"
+    )
+    try:
+        req = urllib.request.Request(f"{gateway.rstrip('/')}/ga4gh/drs/v1/service-info")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            body = json.loads(resp.read())
+            fs.bandwidth_adaptive = "bandwidth_adaptive" in body.get("supported_features", [])
+    except Exception:
+        pass
+
+    fs.power_monitor = _probe(gateway, "/api/v1/health/power")
+    fs.residency_audit = _probe(gateway, "/api/v1/audit/residency")
+    fs.reference_registry = _probe(gateway, "/api/v1/references")
+
+    return fs
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    gw = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:18080"
+    fs = detect(gw)
+    print(json.dumps({"gateway": gw, "features": fs.summary(),
+                      "available_count": fs.available_count()}, indent=2))

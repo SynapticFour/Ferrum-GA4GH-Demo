@@ -1,0 +1,8 @@
+{
+  "organism": "Plasmodium_falciparum",
+  "strain": "3D7_synthetic",
+  "collection_date": "2025-11-01",
+  "collection_location": "West Africa (synthetic)",
+  "sequencing_platform": "Oxford Nanopore MinION (synthetic)",
+  "note": "Synthetic data for demo purposes only. Not real patient data."
+}

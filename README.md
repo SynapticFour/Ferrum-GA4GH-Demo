@@ -23,11 +23,31 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 | `--macro` | Two passes: plain + Crypt4GH-at-rest ingest; **merges** `results/drs_micro.json` with `plain` + `crypt4gh_at_rest` (+ optional `crypt4gh` if pubkey env set) |
 | `--crypt4gh` | Requires `FERRUM_GA4GH_CRYPT4GH_PUBKEY`: adds optional **client-header** timing to `drs_micro.json` (see [benchmark.md](docs/benchmark.md)) |
 | `--no-reset` | Keep compose volumes — see [architecture → Demo scope](docs/architecture.md#demo-scope-phases) |
+| `--africa` | Apply Africa resilience overlay; run Africa scenarios when features detected |
 | `--help` | Full usage |
+
+### Africa resilience features
+
+Ferrum supports Africa-specific resilience features (offline mode, ONT ingestion,
+multi-pathogen surveillance, outbreak mode, data residency audit) developed for
+resource-constrained environments. These are implemented progressively in Ferrum
+upstream.
+
+This demo **automatically detects** which Africa features are present in the
+Ferrum build being used and runs the corresponding scenarios. When features are
+absent, scenarios are skipped gracefully — the EU/GA4GH benchmark is unaffected.
+
+```bash
+./run --africa    # apply Africa overlay + run Africa scenarios if features detected
+```
+
+Results: `results/africa_results.json` — feature detection + per-scenario outcomes.
+
+See [synapticfour.com/en/ferrum-africa](https://synapticfour.com/en/ferrum-africa) for the full Africa deployment guide.
 
 **Environment:** `FERRUM_GA4GH_ENGINE` (`wdl` \| `nextflow`), `FERRUM_GA4GH_MACRO_COMPARE`, `FERRUM_GA4GH_ENCRYPT_INGEST`, `FERRUM_GA4GH_CRYPT4GH_PUBKEY`, `FERRUM_GA4GH_RESET_VOLUMES`, `FERRUM_TES_DOCKER_PLATFORM` (arm64 defaults to `linux/amd64` for Nextflow). See `./run --help`.
 
-**Outputs:** `results/` — `query.vcf.gz`, `benchmark.json`, `metrics.json`, **`drs_micro.json`** (see below), optional `phase2_*`, `benchmark.phase2_*`, **`drs_mapping_phase_plain.json`** after `--macro`. **Docs:** `scripts/update_docs.py` refreshes the table below and [docs/benchmark.md](docs/benchmark.md).
+**Outputs:** `results/` — `query.vcf.gz`, `benchmark.json`, `metrics.json`, **`drs_micro.json`**, **`africa_results.json`** (see below), optional `phase2_*`, `benchmark.phase2_*`, **`drs_mapping_phase_plain.json`** after `--macro`. **Docs:** `scripts/update_docs.py` refreshes the table below and [docs/benchmark.md](docs/benchmark.md).
 
 ## Village Network Demo (field / edge)
 

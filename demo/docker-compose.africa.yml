@@ -1,0 +1,35 @@
+# Africa resilience overlay for Ferrum-GA4GH-Demo.
+# Applied on top of deploy/docker-compose.yml + demo/docker-compose.ga4gh.yml.
+# Purpose: configure Africa-specific Ferrum features when available.
+# Usage: via ./run --africa (never applied by default)
+#
+# These environment variables are IGNORED by stock Ferrum (no Africa features).
+# They activate only when Ferrum upstream has implemented the Africa Cursor Prompts.
+services:
+  ferrum-gateway:
+    environment:
+      # Offline/SQLite mode — ignored if ferrum-embed crate not present
+      FERRUM_AFRICA__OFFLINE_FIRST: "false"   # keep false in compose; demo uses postgres
+      FERRUM_AFRICA__MAX_MEMORY_MB: "4096"
+
+      # Power monitor — safe noop if not implemented
+      FERRUM_AFRICA__POWER_ENABLED: "true"
+      FERRUM_AFRICA__LOW_POWER_THRESHOLD: "30"
+      FERRUM_AFRICA__EMERGENCY_THRESHOLD: "10"
+
+      # Federation — disabled for single-node demo
+      FERRUM_FEDERATION__ENABLED: "false"
+
+      # Outbreak mode — demo policy pre-configured
+      FERRUM_OUTBREAK__ENABLED: "true"
+      # Inline TOML for demo policy (no external file needed)
+      FERRUM_OUTBREAK__DEMO_POLICY: |
+        [[outbreak.policies]]
+        name = "demo_outbreak_policy"
+        trigger_pathogen = "demo_pathogen"
+        emergency_recipients = ["demo@synapticfour.com"]
+        access_level = "beacon_only"
+        gisaid_auto_package = false
+
+      # Reference registry seeding — enabled
+      FERRUM_REFERENCE__SEED_ON_STARTUP: "true"

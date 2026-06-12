@@ -10,6 +10,7 @@ USE_NEXTFLOW=0
 USE_CRYPT4GH=0
 USE_MACRO=0
 GIAB_FULL=0
+AFRICA_OVERLAY=""
 
 usage() {
   cat <<'EOF'
@@ -23,6 +24,8 @@ Usage: ./run [options]
   --plain          Default DRS stream path (implicit).
   --giab-full      Not implemented — see docs/architecture.md (resource planning).
   --no-reset       Keep docker compose volumes (FERRUM_GA4GH_RESET_VOLUMES=0). Risky if DB schema drifts; see README.
+  --africa         Apply Africa resilience overlay (activates Africa features
+                   if present in Ferrum upstream; otherwise has no effect)
   -h, --help       Show this help.
 
 Details: docs/architecture.md
@@ -66,6 +69,10 @@ while [[ $# -gt 0 ]]; do
     --no-reset)
       export FERRUM_GA4GH_RESET_VOLUMES=0
       ;;
+    --africa)
+      AFRICA_OVERLAY="-f $ROOT/demo/docker-compose.africa.yml"
+      export FERRUM_GA4GH_AFRICA_MODE=1
+      ;;
     *)
       echo "Unknown option: $1 (try ./run --help)" >&2
       exit 2
@@ -99,5 +106,7 @@ if [[ "$USE_CRYPT4GH" -eq 1 ]]; then
     exit 3
   fi
 fi
+
+export AFRICA_OVERLAY
 
 exec bash "$ROOT/demo/run.sh"

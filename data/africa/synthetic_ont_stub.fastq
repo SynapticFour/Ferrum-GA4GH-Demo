@@ -1,0 +1,8 @@
+@synthetic_pf_read_001 runid=demo_run_001 sampleid=synthetic_pf_sample
+ACGTACGTACGTACGTACGTACGTACGTACGT
++
+IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII
+@synthetic_pf_read_002 runid=demo_run_001 sampleid=synthetic_pf_sample
+TGCATGCATGCATGCATGCATGCATGCATGCA
++
+IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII

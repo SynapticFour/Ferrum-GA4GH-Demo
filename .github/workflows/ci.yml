@@ -34,3 +34,28 @@ jobs:
       - run: bash -n demo/scenarios/village-network/run-village-demo.sh
       - run: bash -n demo/scenarios/raspberry-pi/install-ferrum-edge.sh
       - run: docker compose -f demo/scenarios/village-network/docker-compose.village.yml config
+
+  africa-scripts-check:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Syntax check Africa Python files
+        run: python3 -m compileall -q demo/lib/africa_feature_detect.py demo/lib/africa_scenarios.py
+      - name: Import check (no running Ferrum needed)
+        run: |
+          cd demo/lib
+          python3 -c "import africa_feature_detect; print('africa_feature_detect OK')"
+          python3 -c "import africa_scenarios; print('africa_scenarios OK')"
+          python3 -c "
+          from africa_feature_detect import detect
+          fs = detect('http://127.0.0.1:1')
+          assert not fs.any_available(), 'Should return no features for unreachable gateway'
+          print('Graceful degradation OK')
+          "
+      - name: Verify run script parses --africa flag
+        run: bash -n run && grep -q '\-\-africa' run && echo 'Flag present'
+      - name: Verify docker-compose.africa.yml is valid YAML
+        run: |
+          pip install --quiet pyyaml
+          python3 -c "import yaml; yaml.safe_load(open('demo/docker-compose.africa.yml'))"

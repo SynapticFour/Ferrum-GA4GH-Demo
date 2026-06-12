@@ -126,4 +126,21 @@ flowchart LR
 
 `benchmark/Dockerfile.happy` — linux/amd64 micromamba, hap.py + rtg-tools. `benchmark/run_happy.sh` → `results/benchmark.json`.
 
-Auto-generated **[docs/benchmark.md](./benchmark.md)** includes the main metrics table (plain / **Crypt4GH at-rest** / optional **client header** medians when present), **Publication-friendly summary** with a **DRS micro JSON keys** table and median rows, DRS micro **n**, on-disk **BAM / ingest totals** (`scripts/dataset_profile.py` → `results/dataset_profile.json`), and **Cromwell vs Nextflow** (`demo/lib/update_engine_compare.py` → `results/engine_compare.json`). Run **`./run`**, **`./run --nextflow`**, and **`./run --macro`** to populate engine compare and merged DRS micro; `results/` is gitignored but the markdown is often committed after local runs.
+Auto-generated **[docs/benchmark.md](./benchmark.md)** includes the main metrics table (plain / **Crypt4GH at-rest** / optional **client header** medians when present), **Publication-friendly summary** with a **DRS micro JSON keys** table and median rows, DRS micro **n**, on-disk **BAM / ingest totals** (`scripts/dataset_profile.py` → `results/dataset_profile.json`), **Cromwell vs Nextflow** (`demo/lib/update_engine_compare.py` → `results/engine_compare.json`), and **Africa resilience features** (from `results/africa_results.json`). Run **`./run`**, **`./run --nextflow`**, and **`./run --macro`** to populate engine compare and merged DRS micro; `results/` is gitignored but the markdown is often committed after local runs.
+
+## Africa feature detection
+
+After the standard GA4GH benchmark completes, `demo/run.sh` probes the running
+Ferrum gateway via `demo/lib/africa_feature_detect.py` to determine which
+Africa resilience features are available in the current Ferrum build.
+
+The probe is non-destructive and non-blocking. Scenarios run via
+`demo/lib/africa_scenarios.py` in the same process. Results are written to
+`results/africa_results.json` and merged into `results/metrics.json`.
+
+The `./run --africa` flag additionally applies `demo/docker-compose.africa.yml`
+which configures Africa-specific Ferrum environment variables. These are ignored
+by Ferrum builds that do not implement the Africa features.
+
+**Invariant:** `./run` (without `--africa`) produces identical results regardless
+of which Africa features are or are not present in the Ferrum build.

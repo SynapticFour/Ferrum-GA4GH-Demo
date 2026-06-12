@@ -62,6 +62,19 @@ def main() -> None:
             "docker_stats_gateway_sample": snap.get("docker_stats_gateway_sample"),
             "drs_micro": snap.get("drs_micro"),
         }
+    africa_path = root / "results" / "africa_results.json"
+    if africa_path.is_file():
+        try:
+            africa_data = json.loads(africa_path.read_text(encoding="utf-8"))
+            out["africa"] = {
+                "available_features": africa_data.get("available_count", 0),
+                "scenarios_ran": africa_data.get("summary", {}).get("ran", 0),
+                "scenarios_skipped": africa_data.get("summary", {}).get("skipped", 0),
+                "all_passed": africa_data.get("summary", {}).get("all_passed", True),
+            }
+        except (OSError, json.JSONDecodeError):
+            pass
+
     (root / "results" / "metrics.json").write_text(
         json.dumps(out, indent=2),
         encoding="utf-8",
