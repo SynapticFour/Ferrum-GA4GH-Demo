@@ -25,3 +25,12 @@ jobs:
 
       - name: Python (demo lib + scripts)
         run: python3 -m compileall -q demo/lib scripts
+
+  village-network-syntax:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - run: bash -n demo/scenarios/village-network/run-village-demo.sh
+      - run: bash -n demo/scenarios/raspberry-pi/install-ferrum-edge.sh
+      - run: docker compose -f demo/scenarios/village-network/docker-compose.village.yml config

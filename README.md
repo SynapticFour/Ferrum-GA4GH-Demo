@@ -29,6 +29,16 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 
 **Outputs:** `results/` — `query.vcf.gz`, `benchmark.json`, `metrics.json`, **`drs_micro.json`** (see below), optional `phase2_*`, `benchmark.phase2_*`, **`drs_mapping_phase_plain.json`** after `--macro`. **Docs:** `scripts/update_docs.py` refreshes the table below and [docs/benchmark.md](docs/benchmark.md).
 
+## Village Network Demo (field / edge)
+
+Simulate **two Raspberry Pi 5 labs** on one laptop — Kisumu (Kenya) and Nouna (Burkina Faso) — with federated Beacon, no internet, and rural WiFi latency shaping:
+
+```bash
+bash demo/scenarios/village-network/run-village-demo.sh
+```
+
+Requires a Ferrum image with Africa/federation features (`FERRUM_IMAGE` override). For physical hardware, use `demo/scenarios/raspberry-pi/install-ferrum-edge.sh` or [Ferrum-Lab-Kit `install-edge.sh`](https://github.com/SynapticFour/Ferrum-Lab-Kit/blob/main/install-edge.sh). Video script: `demo/scenarios/video-script/ferrum-edge-video-script.md`.
+
 Pipeline input policy: WES requests are **DRS-first** for the primary dataset (`input_drs_uri`) while keeping per-file workflow parameters bound to DRS-backed `/stream` URLs for engine compatibility.
 
 ### DRS `/stream` micro-benchmark (`drs_micro.json`)
@@ -53,8 +63,11 @@ Details, median table, and object-id notes: [docs/benchmark.md → Publication-f
 | Path | Role |
 |------|------|
 | `./run`, `demo/run.sh` | Entrypoints |
+| `demo/scenarios/village-network/` | **Village Network Demo** — two federated Beacon nodes on one laptop |
+| `demo/scenarios/raspberry-pi/install-ferrum-edge.sh` | Bare Pi 5 → GA4GH node in &lt;10 min |
+| `demo/scenarios/video-script/` | HeyGen/Synthesia script (DE/EN/FR) for Ferrum Edge |
 | `demo/docker-compose.ga4gh.yml` | TES, WES workdir, `docker.sock`, Crypt4GH keys |
-| `demo/lib/*.py` | Ingest, WES JSON, metrics, snapshots, `update_engine_compare.py` |
+| `demo/lib/*.py` | Ingest, WES JSON, metrics, Africa scenarios, snapshots |
 | `vendor/ferrum-overlay/` | Minimal Ferrum patches: gateway TES env + small `ferrum-wes` TES submit tweaks (see architecture) |
 | `workflows/tiny_hc.{wdl,nf}` | Minimal HaplotypeCaller |
 | `scripts/` | Fetch, TRS cache, DRS micro-bench, `dataset_profile.py`, `update_docs.py` |

@@ -1,0 +1,58 @@
+# Village Network simulation: two Ferrum nodes, no internet, federated Beacon.
+# Node A: Kisumu Lab (Kenya) — holds Plasmodium falciparum data
+# Node B: Nouna Lab (Burkina Faso) — holds Mycobacterium tuberculosis data
+# Demonstrates: federated Beacon P2P, data sovereignty, GA4GH compliance
+# Hardware equivalent: two Raspberry Pi 5s connected by WiFi
+
+services:
+  ferrum-kisumu:
+    image: "${FERRUM_IMAGE:-ghcr.io/synapticfour/ferrum:latest}"
+    environment:
+      FERRUM_AFRICA__OFFLINE_FIRST: "true"
+      FERRUM_AFRICA__MAX_MEMORY_MB: "1024"
+      FERRUM_FEDERATION__ENABLED: "true"
+      FERRUM_FEDERATION__PEERS: |
+        [[federation.peers]]
+        name = "Nouna-Lab"
+        beacon_endpoint = "http://ferrum-nouna:8080/ga4gh/beacon/v2"
+        timeout_ms = 5000
+      FERRUM_NODE_NAME: "Kisumu-Lab-Kenya"
+    ports:
+      - "18081:8080"
+    networks:
+      - village-net
+
+  ferrum-nouna:
+    image: "${FERRUM_IMAGE:-ghcr.io/synapticfour/ferrum:latest}"
+    environment:
+      FERRUM_AFRICA__OFFLINE_FIRST: "true"
+      FERRUM_AFRICA__MAX_MEMORY_MB: "1024"
+      FERRUM_FEDERATION__ENABLED: "true"
+      FERRUM_FEDERATION__PEERS: |
+        [[federation.peers]]
+        name = "Kisumu-Lab"
+        beacon_endpoint = "http://ferrum-kisumu:8080/ga4gh/beacon/v2"
+        timeout_ms = 5000
+      FERRUM_NODE_NAME: "Nouna-Lab-Burkina-Faso"
+    ports:
+      - "18082:8080"
+    networks:
+      - village-net
+
+  # Network simulator: throttle to 1 Mbit/s between nodes (rural WiFi equivalent)
+  # Uses Linux tc netem via a traffic-shaping sidecar
+  network-shaper:
+    image: "nicolaka/netshoot:latest"
+    command: >
+      sh -c "tc qdisc add dev eth0 root netem rate 1mbit delay 200ms 50ms &&
+             echo 'Network shaped to 1Mbit/s, 200ms latency' &&
+             sleep infinity"
+    cap_add: [NET_ADMIN]
+    networks:
+      - village-net
+
+networks:
+  village-net:
+    driver: bridge
+    # Intentionally isolated from host network — simulates offline village
+    internal: true

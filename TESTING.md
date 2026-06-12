@@ -17,9 +17,12 @@ This repository validates behavior through lightweight CI checks plus end-to-end
 1. Run static checks:
    - `bash -n run`
    - `bash -n demo/run.sh`
+   - `bash -n demo/scenarios/village-network/run-village-demo.sh`
+   - `bash -n demo/scenarios/raspberry-pi/install-ferrum-edge.sh`
    - `python3 -m compileall -q demo/lib scripts`
 2. Run a demo execution:
    - `./run` (WDL path), and when relevant `./run --nextflow`.
+   - Optional (needs Ferrum Africa image): `bash demo/scenarios/village-network/run-village-demo.sh`
 3. Confirm produced artifacts are coherent:
    - `results/benchmark.json`
    - `results/metrics.json`

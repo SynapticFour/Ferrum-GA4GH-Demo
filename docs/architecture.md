@@ -92,6 +92,32 @@ Extra clone path: `FERUM_SRC` (`.cache/ferrum`) — second checkout only if you 
 
 Everything else (Docker TES executor, compose **`FERRUM_GATEWAY_FEATURES=tes-docker`**, **`FERRUM_TES_DOCKER_*`**, **`FERRUM_WES_TES_*`**) follows [Ferrum](https://github.com/SynapticFour/Ferrum) as documented. Conformance runner: [HelixTest](https://github.com/SynapticFour/HelixTest). Deployment / lab on-ramp: [Ferrum-Lab-Kit](https://github.com/SynapticFour/Ferrum-Lab-Kit).
 
+## Village Network simulation (field / edge)
+
+Two Ferrum gateways on an **internal Docker network** simulate two village labs (Kisumu + Nouna) with **federated Beacon** and a **netem sidecar** (1 Mbit/s, ~200 ms latency). Host ports **18081** / **18082** expose each node for curl and `demo/lib/africa_scenarios.py` ingest.
+
+| Path | Role |
+|------|------|
+| `demo/scenarios/village-network/docker-compose.village.yml` | Two-node compose + network shaper |
+| `demo/scenarios/village-network/run-village-demo.sh` | Full demo: ingest, federated query, resilience, audit |
+| `demo/lib/africa_scenarios.py` | Synthetic ONT/pathogen ingest per node |
+| `demo/lib/africa_feature_detect.py` | Probe gateway for Africa/federation flags |
+
+**Simulation-first, then hardware:** validate federation and residency flows on a laptop before shipping Raspberry Pi kits. Physical install: `demo/scenarios/raspberry-pi/install-ferrum-edge.sh` (standalone) or Ferrum-Lab-Kit [`install-edge.sh`](https://github.com/SynapticFour/Ferrum-Lab-Kit/blob/main/install-edge.sh) (`field-edge` profile + compose merge). `FERRUM_AFRICA__*` and `FERRUM_FEDERATION__*` env vars are **ignored by stock Ferrum** until Africa Cursor Prompts land upstream.
+
+```mermaid
+flowchart LR
+  subgraph VillageNet[village-net internal]
+    K[ferrum-kisumu]
+    N[ferrum-nouna]
+    S[network-shaper netem]
+    K <-->|1 Mbit/s| N
+    S --- VillageNet
+  end
+  H[Host laptop] -->|18081| K
+  H -->|18082| N
+```
+
 `demo/run.sh` runs **`git checkout`** on paths we no longer overlay so stale patches in `.cache/ferrum` are dropped. DRS is **not** patched.
 
 **Host vs container paths:** `demo/run.sh` sets **`FERUM_WES_WORK_HOST`** to **`$REPO/results/wes-work`** (absolute), passed into compose as **`FERRUM_WES_TES_WORK_HOST_PREFIX`**. Custom bind: **`FERRUM_GA4GH_WES_HOST_OVERRIDE`** (absolute path on the Docker host).
