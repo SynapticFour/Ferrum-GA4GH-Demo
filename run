@@ -11,6 +11,9 @@ USE_CRYPT4GH=0
 USE_MACRO=0
 GIAB_FULL=0
 AFRICA_OVERLAY=""
+WITH_INFRA=0
+INFRA_OVERLAY=""
+CO_DEPLOY_OVERLAY=""
 
 usage() {
   cat <<'EOF'
@@ -26,6 +29,9 @@ Usage: ./run [options]
   --no-reset       Keep docker compose volumes (FERRUM_GA4GH_RESET_VOLUMES=0). Risky if DB schema drifts; see README.
   --africa         Apply Africa resilience overlay (activates Africa features
                    if present in Ferrum upstream; otherwise has no effect)
+  --with-infra     Co-deploy ga4gh-infra (broker, visa-registry, service-registry,
+                   ADS on ports 8180–8190, 9100) and wire Ferrum external auth +
+                   service-registry discovery. See docs/architecture.md.
   -h, --help       Show this help.
 
 Details: docs/architecture.md
@@ -73,6 +79,9 @@ while [[ $# -gt 0 ]]; do
       AFRICA_OVERLAY="-f $ROOT/demo/docker-compose.africa.yml"
       export FERRUM_GA4GH_AFRICA_MODE=1
       ;;
+    --with-infra)
+      WITH_INFRA=1
+      ;;
     *)
       echo "Unknown option: $1 (try ./run --help)" >&2
       exit 2
@@ -108,5 +117,12 @@ if [[ "$USE_CRYPT4GH" -eq 1 ]]; then
 fi
 
 export AFRICA_OVERLAY
+
+if [[ "$WITH_INFRA" -eq 1 ]]; then
+  export FERRUM_GA4GH_WITH_INFRA=1
+  INFRA_OVERLAY="-f $ROOT/demo/docker-compose.ga4gh-infra.yml"
+  CO_DEPLOY_OVERLAY="-f $ROOT/demo/docker-compose.co-deploy.yml"
+fi
+export INFRA_OVERLAY CO_DEPLOY_OVERLAY
 
 exec bash "$ROOT/demo/run.sh"

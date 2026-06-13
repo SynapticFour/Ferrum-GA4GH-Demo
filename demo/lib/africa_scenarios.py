@@ -25,7 +25,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any
 
-from africa_feature_detect import AfricaFeatureSet
+from africa_feature_detect import AfricaFeatureSet, detect
 
 
 def scenario_offline_mode(gateway: str, root: Path, fs: AfricaFeatureSet) -> dict:
@@ -130,16 +130,31 @@ def scenario_ont_ingestion(gateway: str, root: Path, fs: AfricaFeatureSet) -> di
         return {"error": str(e)}
 
 
+def _has_pathogen_filter_terms(info: dict) -> bool:
+    terms = info.get("filteringTerms") or []
+    if isinstance(terms, dict):
+        terms = terms.get("filteringTerms") or []
+    return any(
+        (t.get("id") or "").lower() == "pathogenfilter"
+        for t in terms
+        if isinstance(t, dict)
+    )
+
+
 def scenario_multi_pathogen_beacon(gateway: str, root: Path, fs: AfricaFeatureSet) -> dict:
     if not fs.multi_pathogen_beacon:
         return {"skipped": True, "reason": "multi_pathogen_beacon filtering_terms not available"}
 
     try:
-        req = urllib.request.Request(
-            f"{gateway}/ga4gh/beacon/v2/filtering_terms?type=PathoGenFilter"
-        )
+        req = urllib.request.Request(f"{gateway}/ga4gh/beacon/v2/info")
         with urllib.request.urlopen(req, timeout=10) as resp:
-            terms = json.loads(resp.read())
+            info = json.loads(resp.read())
+
+        if not _has_pathogen_filter_terms(info):
+            return {
+                "skipped": True,
+                "reason": "Beacon /info has no PathoGenFilter filteringTerms",
+            }
 
         req2 = urllib.request.Request(f"{gateway}/ga4gh/beacon/v2/g_variants?limit=1")
         with urllib.request.urlopen(req2, timeout=10) as resp2:
@@ -155,9 +170,13 @@ def scenario_multi_pathogen_beacon(gateway: str, root: Path, fs: AfricaFeatureSe
         with urllib.request.urlopen(req3, timeout=10) as resp3:
             human_filtered = json.loads(resp3.read())
 
+        terms = info.get("filteringTerms") or []
+        if isinstance(terms, dict):
+            terms = terms.get("filteringTerms") or []
+
         return {
             "ok": True,
-            "pathogen_filter_terms": terms.get("filteringTerms", [])[:3],
+            "pathogen_filter_terms": terms[:3],
             "human_query_works": not human_result.get("error"),
             "meta_schema_present": schema_present,
             "organism_filter_works": not human_filtered.get("error"),
@@ -273,6 +292,14 @@ def scenario_residency_audit(gateway: str, root: Path, fs: AfricaFeatureSet) -> 
         return {"error": str(e)}
 
 
+def _is_pathogen_scope(scope: Any) -> bool:
+    if isinstance(scope, dict):
+        return scope.get("type") == "pathogen"
+    if isinstance(scope, str):
+        return scope.startswith("Pathogen")
+    return False
+
+
 def scenario_reference_registry(gateway: str, root: Path, fs: AfricaFeatureSet) -> dict:
     if not fs.reference_registry:
         return {"skipped": True, "reason": "reference_registry endpoint not available"}
@@ -283,11 +310,14 @@ def scenario_reference_registry(gateway: str, root: Path, fs: AfricaFeatureSet) 
             refs = json.loads(resp.read())
 
         ref_list = refs if isinstance(refs, list) else refs.get("references", [])
-        ids = [r.get("id") for r in ref_list]
+        ids = [r.get("id") for r in ref_list if isinstance(r, dict)]
 
         grch38_present = "GRCh38" in ids
         h3africa_present = "H3Africa_v1" in ids
-        pathogen_refs = [r for r in ref_list if r.get("population_scope", "").startswith("Pathogen")]
+        pathogen_refs = [
+            r for r in ref_list
+            if isinstance(r, dict) and _is_pathogen_scope(r.get("population_scope"))
+        ]
 
         return {
             "ok": True,

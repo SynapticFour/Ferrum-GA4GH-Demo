@@ -144,3 +144,67 @@ by Ferrum builds that do not implement the Africa features.
 
 **Invariant:** `./run` (without `--africa`) produces identical results regardless
 of which Africa features are or are not present in the Ferrum build.
+
+## Co-deploy with ga4gh-infra
+
+`./run --with-infra` starts **ga4gh-infra** alongside Ferrum in one Docker Compose
+project. Infra listens on a dedicated port block (**8180–8190**, **9100**) so it
+does not clash with Ferrum’s gateway (**18080** by default).
+
+| Port | Service |
+|------|---------|
+| 8180 | aai-broker |
+| 8181 | visa-registry |
+| 8182 | duo-service |
+| 8183 | service-registry |
+| 8190 | access-decision-service (ADS) |
+| 9100 | mock-idp (OIDC upstream for broker login demos) |
+
+| Path | Role |
+|------|------|
+| `demo/docker-compose.ga4gh-infra.yml` | ga4gh-infra SQLite stack (co-deploy ports) |
+| `demo/docker-compose.co-deploy.yml` | Ferrum external auth + service-registry discovery |
+| `demo/config/ga4gh-infra/*.toml` | Co-deploy TOML (host `localhost:818x` URLs) |
+| `demo/lib/infra_feature_detect.py` | Probe broker, visa-registry, service-registry, ADS |
+| `demo/lib/co_deploy_scenarios.py` | Broker login → Passport → DRS; registry listing |
+
+**Compose merge order:** `deploy/docker-compose.yml` → `demo/docker-compose.ga4gh.yml`
+→ `demo/docker-compose.ga4gh-infra.yml` → `demo/docker-compose.co-deploy.yml`
+→ optional `demo/docker-compose.africa.yml`.
+
+**Ferrum env (co-deploy overlay):** `FERRUM_AUTH__MODE=external`,
+`FERRUM_AUTH__ISSUER` / `FERRUM_AUTH__JWKS_URL` point at `aai-broker:8080`,
+`FERRUM_SERVICES__ENABLE_PASSPORTS=false`, `FERRUM_DISCOVERY__ENABLED=true`,
+`FERRUM_DISCOVERY__AUTO_REGISTER=true`. Built-in ferrum-passports are disabled;
+Passports are validated via ga4gh-clearinghouse against the broker JWKS.
+
+**Clone layout:** `demo/run.sh` clones **ga4gh-infra** to `.cache/ga4gh-infra`
+(sibling of `.cache/ferrum`) so Ferrum’s path dependency on `ga4gh-clearinghouse`
+resolves during `docker compose build`. Override with `GA4GH_INFRA_SRC`.
+
+After the main benchmark, co-deploy scenarios run when infra is detected.
+Results: `results/co_deploy_results.json`, merged into `results/metrics.json`.
+
+**Invariant:** `./run` (without `--with-infra`) is unchanged. Co-deploy scenarios
+are skipped with `all_passed: true` when infra is absent.
+
+```mermaid
+flowchart LR
+  subgraph Infra[ga4gh-infra 8180-8190]
+    IDP[mock-idp :9100]
+    BR[aai-broker :8180]
+    VR[visa-registry :8181]
+    SR[service-registry :8183]
+    ADS[ADS :8190]
+  end
+  subgraph Ferrum[Ferrum :18080]
+    GW[ferrum-gateway]
+    DRS[DRS]
+  end
+  IDP --> BR
+  VR --> BR
+  ADS --> BR
+  BR -->|Passport JWT| GW
+  GW -->|auto_register| SR
+  GW --> DRS
+```

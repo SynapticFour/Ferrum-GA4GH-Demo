@@ -59,16 +59,29 @@ if [[ ! -d "$FERUM_SRC/.git" ]]; then
   git clone --depth 1 https://github.com/SynapticFour/Ferrum.git "$FERUM_SRC"
 fi
 
+GA4GH_INFRA_SRC="${GA4GH_INFRA_SRC:-$(dirname "$FERUM_SRC")/ga4gh-infra}"
+if [[ "${FERRUM_GA4GH_WITH_INFRA:-0}" == "1" ]]; then
+  if [[ ! -d "$GA4GH_INFRA_SRC/.git" ]]; then
+    echo "[demo] cloning ga4gh-infra into $GA4GH_INFRA_SRC (sibling of Ferrum for path deps)..."
+    mkdir -p "$(dirname "$GA4GH_INFRA_SRC")"
+    git clone --depth 1 https://github.com/SynapticFour/ga4gh-infra.git "$GA4GH_INFRA_SRC"
+  fi
+  export GA4GH_INFRA_SRC
+fi
+
 echo "[demo] applying GA4GH demo overlay to Ferrum sources..."
 if [[ -d "$FERUM_SRC/.git" ]]; then
   git -C "$FERUM_SRC" checkout HEAD -- \
     crates/ferrum-drs/src/repo.rs \
     crates/ferrum-tes/src/executors/docker.rs \
     deploy/Dockerfile.gateway \
-    crates/ferrum-gateway/Cargo.toml \
     2>/dev/null || true
 fi
-rsync -a "$ROOT/vendor/ferrum-overlay/" "$FERUM_SRC/"
+# Never rsync ferrum-gateway/Cargo.toml or main.rs — overlay versions strip features / laptop mode.
+rsync -a \
+  --exclude='crates/ferrum-gateway/Cargo.toml' \
+  --exclude='crates/ferrum-gateway/src/main.rs' \
+  "$ROOT/vendor/ferrum-overlay/" "$FERUM_SRC/"
 if [[ -d "$FERUM_SRC/.git" ]]; then
   git -C "$FERUM_SRC" checkout HEAD -- crates/ferrum-drs/src/repo.rs 2>/dev/null || true
 fi
@@ -115,21 +128,31 @@ else
   echo "[demo] engine=wdl workflow=$WORKFLOW_URL"
 fi
 
+COMPOSE_FILES=(
+  -f docker-compose.yml
+  -f "$ROOT/demo/docker-compose.ga4gh.yml"
+)
+if [[ -n "${INFRA_OVERLAY:-}" ]]; then
+  COMPOSE_FILES+=(${INFRA_OVERLAY})
+fi
+if [[ -n "${CO_DEPLOY_OVERLAY:-}" ]]; then
+  COMPOSE_FILES+=(${CO_DEPLOY_OVERLAY})
+fi
+if [[ -n "${AFRICA_OVERLAY:-}" ]]; then
+  COMPOSE_FILES+=(${AFRICA_OVERLAY})
+fi
+
 echo "[demo] building & starting Ferrum stack (docker compose)..."
 (
   cd "$FERUM_SRC/deploy"
   # Fresh Postgres/MinIO volumes avoid half-applied migrations when re-running the demo.
   if [[ "${FERRUM_GA4GH_RESET_VOLUMES:-1}" == "1" ]]; then
     docker compose -p "$COMPOSE_PROJECT_NAME" \
-      -f docker-compose.yml \
-      -f "$ROOT/demo/docker-compose.ga4gh.yml" \
-      ${AFRICA_OVERLAY:-} \
+      "${COMPOSE_FILES[@]}" \
       down -v --remove-orphans 2>/dev/null || true
   fi
   docker compose -p "$COMPOSE_PROJECT_NAME" \
-    -f docker-compose.yml \
-    -f "$ROOT/demo/docker-compose.ga4gh.yml" \
-    ${AFRICA_OVERLAY:-} \
+    "${COMPOSE_FILES[@]}" \
     up -d --build
 )
 
@@ -157,6 +180,82 @@ for _ in $(seq 1 90); do
 done
 curl -fsS "$GATEWAY/health" >/dev/null
 
+if [[ "${FERRUM_GA4GH_WITH_INFRA:-0}" == "1" ]]; then
+  echo "[demo] waiting for ga4gh-infra co-deploy services..."
+  for url in \
+    "http://127.0.0.1:8180/service-info" \
+    "http://127.0.0.1:8181/service-info" \
+    "http://127.0.0.1:8183/service-info" \
+    "http://127.0.0.1:8190/service-info"; do
+    for _ in $(seq 1 60); do
+      if curl -fsS "$url" >/dev/null 2>&1; then
+        break
+      fi
+      sleep 2
+    done
+    curl -fsS "$url" >/dev/null
+  done
+fi
+
+# Co-deploy scenarios run before the WES pipeline so auth/registry checks are not blocked by hap.py.
+if [[ "${FERRUM_GA4GH_WITH_INFRA:-0}" == "1" ]]; then
+    echo "[demo] detecting ga4gh-infra co-deploy services..."
+    python3 "$ROOT/demo/lib/infra_feature_detect.py" \
+        > "$ROOT/results/infra_features.json" 2>/dev/null || true
+
+    INFRA_AVAILABLE=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('$ROOT/results/infra_features.json'))
+    print(d.get('available_count', 0))
+except Exception:
+    print(0)
+")
+
+    if [[ "$INFRA_AVAILABLE" -gt 0 ]]; then
+        echo "[demo] ga4gh-infra detected ($INFRA_AVAILABLE services). Running co-deploy scenarios..."
+        python3 - <<PYEOF
+import sys, json
+sys.path.insert(0, '$ROOT/demo/lib')
+from infra_feature_detect import detect
+from co_deploy_scenarios import run_all
+from pathlib import Path
+
+root = Path('$ROOT')
+gateway = '$GATEWAY'
+fs = detect()
+results = run_all(gateway, root, fs)
+(root / 'results' / 'co_deploy_results.json').write_text(
+    json.dumps(results, indent=2), encoding='utf-8'
+)
+print(json.dumps({"ok": True, "summary": results["summary"]}))
+if not results.get("summary", {}).get("all_passed", False):
+    raise SystemExit(1)
+PYEOF
+    else
+        echo "[demo] ga4gh-infra services not reachable. Skipping co-deploy scenarios."
+        python3 -c "
+import json
+from pathlib import Path
+Path('$ROOT/results/co_deploy_results.json').write_text(
+    json.dumps({'detected_features': {}, 'available_count': 0,
+                'scenarios': {}, 'summary': {'ran': 0, 'skipped': 4, 'errors': 0,
+                'all_passed': True, 'note': 'ga4gh-infra not running'}},
+    indent=2), encoding='utf-8')
+"
+    fi
+else
+    python3 -c "
+import json
+from pathlib import Path
+Path('$ROOT/results/co_deploy_results.json').write_text(
+    json.dumps({'detected_features': {}, 'available_count': 0,
+                'scenarios': {}, 'summary': {'ran': 0, 'skipped': 4, 'errors': 0,
+                'all_passed': True, 'note': 'Run ./run --with-infra to enable co-deploy scenarios'}},
+    indent=2), encoding='utf-8')
+"
+fi
+
 chmod +x "$ROOT/demo/lib/compose_metrics.py" "$ROOT/demo/lib/record_pass_snapshot.py" \
   "$ROOT/demo/lib/update_engine_compare.py" "$ROOT/scripts/dataset_profile.py"
 
@@ -181,15 +280,6 @@ pipeline_pass() {
   FERRUM_GA4GH_INPUT_DRS_URI="$(
     python3 -c "import json; print(json.load(open('$ROOT/drs/mapping.json'))['objects']['input_bam']['drs_uri'])"
   )"
-
-  echo "[demo] DRS stream micro-benchmark (plain + optional Crypt4GH header)..."
-  chmod +x "$ROOT/scripts/drs_micro_benchmark.py"
-  REF_OID="$(python3 -c "import json; print(json.load(open('$ROOT/drs/mapping.json'))['objects']['ref_fasta']['object_id'])")"
-  DRS_MICRO_ARGS=(python3 "$ROOT/scripts/drs_micro_benchmark.py" "$GATEWAY" "$REF_OID" -o "$ROOT/results/drs_micro.json")
-  if [[ -n "${FERRUM_GA4GH_CRYPT4GH_PUBKEY:-}" && -f "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}" ]]; then
-    DRS_MICRO_ARGS+=(--crypt4gh-pubkey "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}")
-  fi
-  "${DRS_MICRO_ARGS[@]}"
 
   WES_PAYLOAD="$ROOT/results/wes_request.json"
   export FERRUM_GA4GH_ENGINE
@@ -219,11 +309,30 @@ pipeline_pass() {
   done
   [[ "$STATE" == "COMPLETE" ]] || { echo "WES did not complete: $STATE" >&2; exit 1; }
 
-  QUERY_VCF="$(find "$FERUM_WES_WORK_HOST/$RUN_ID" -type f \( -name 'output.vcf.gz' -o -name '*.vcf.gz' \) 2>/dev/null | grep -v g.vcf | head -1 || true)"
-  [[ -n "$QUERY_VCF" ]] || QUERY_VCF="$(find "$FERUM_WES_WORK_HOST/$RUN_ID" -type f -name '*.vcf.gz' 2>/dev/null | head -1 || true)"
+  QUERY_VCF=""
+  VCF_WAIT_SECS="${FERRUM_GA4GH_VCF_WAIT_SECS:-1800}"
+  VCF_POLL_INTERVAL="${FERRUM_GA4GH_VCF_POLL_INTERVAL:-5}"
+  VCF_ATTEMPTS=$((VCF_WAIT_SECS / VCF_POLL_INTERVAL))
+  [[ "$VCF_ATTEMPTS" -ge 1 ]] || VCF_ATTEMPTS=1
+  echo "[demo] waiting up to ${VCF_WAIT_SECS}s for query VCF under ${FERUM_WES_WORK_HOST}/${RUN_ID}..."
+  for _ in $(seq 1 "$VCF_ATTEMPTS"); do
+    QUERY_VCF="$(find "$FERUM_WES_WORK_HOST/$RUN_ID" -type f \( -name 'output.vcf.gz' -o -name '*.vcf.gz' \) 2>/dev/null | grep -v g.vcf | head -1 || true)"
+    [[ -n "$QUERY_VCF" ]] || QUERY_VCF="$(find "$FERUM_WES_WORK_HOST/$RUN_ID" -type f -name '*.vcf.gz' 2>/dev/null | head -1 || true)"
+    [[ -f "$QUERY_VCF" ]] && break
+    sleep "$VCF_POLL_INTERVAL"
+  done
   [[ -f "$QUERY_VCF" ]] || { echo "no query VCF under $FERUM_WES_WORK_HOST/$RUN_ID" >&2; find "$FERUM_WES_WORK_HOST/$RUN_ID" | head -50 >&2; exit 1; }
   cp -f "$QUERY_VCF" "$ROOT/results/query.vcf.gz"
   echo "[demo] query VCF -> results/query.vcf.gz"
+
+  echo "[demo] DRS stream micro-benchmark (plain + optional Crypt4GH header)..."
+  chmod +x "$ROOT/scripts/drs_micro_benchmark.py"
+  REF_OID="$(python3 -c "import json; print(json.load(open('$ROOT/drs/mapping.json'))['objects']['ref_fasta']['object_id'])")"
+  DRS_MICRO_ARGS=(python3 "$ROOT/scripts/drs_micro_benchmark.py" "$GATEWAY" "$REF_OID" -o "$ROOT/results/drs_micro.json")
+  if [[ -n "${FERRUM_GA4GH_CRYPT4GH_PUBKEY:-}" && -f "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}" ]]; then
+    DRS_MICRO_ARGS+=(--crypt4gh-pubkey "${FERRUM_GA4GH_CRYPT4GH_PUBKEY}")
+  fi
+  "${DRS_MICRO_ARGS[@]}"
 
   GW_CID="$(
     docker compose -p "$COMPOSE_PROJECT_NAME" \

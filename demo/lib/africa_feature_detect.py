@@ -95,10 +95,7 @@ def detect(gateway: str) -> AfricaFeatureSet:
         pass
 
     fs.ont_ingestion = _probe(gateway, "/api/v1/ingest/ont", "POST")
-    fs.multi_pathogen_beacon = _probe(
-        gateway,
-        "/ga4gh/beacon/v2/filtering_terms?type=PathoGenFilter"
-    )
+    fs.multi_pathogen_beacon = _probe(gateway, "/ga4gh/beacon/v2/info")
     fs.outbreak_mode = _probe(gateway, "/api/v1/outbreak/activate", "POST")
     fs.federated_beacon = _probe(
         gateway,
