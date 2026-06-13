@@ -75,6 +75,19 @@ def main() -> None:
         except (OSError, json.JSONDecodeError):
             pass
 
+    co_deploy_path = root / "results" / "co_deploy_results.json"
+    if co_deploy_path.is_file():
+        try:
+            co_data = json.loads(co_deploy_path.read_text(encoding="utf-8"))
+            out["co_deploy"] = {
+                "available_services": co_data.get("available_count", 0),
+                "scenarios_ran": co_data.get("summary", {}).get("ran", 0),
+                "scenarios_skipped": co_data.get("summary", {}).get("skipped", 0),
+                "all_passed": co_data.get("summary", {}).get("all_passed", True),
+            }
+        except (OSError, json.JSONDecodeError):
+            pass
+
     (root / "results" / "metrics.json").write_text(
         json.dumps(out, indent=2),
         encoding="utf-8",

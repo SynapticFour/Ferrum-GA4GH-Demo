@@ -72,3 +72,49 @@ Expected output when all Africa features present:
 ```
 
 The demo never fails due to Africa feature absence. `all_passed: true` is always expected — errors indicate a real problem with a feature that IS present.
+
+## Co-deploy (Ferrum + ga4gh-infra) verification
+
+Co-deploy scenarios run when `./run --with-infra` is used and ga4gh-infra services
+are reachable. Without the flag, `results/co_deploy_results.json` records a skip note.
+
+```bash
+# Full demo with co-deploy (clones ga4gh-infra to .cache/ga4gh-infra if needed):
+./run --with-infra
+
+# Probe infra only (with stack running):
+python3 demo/lib/infra_feature_detect.py
+
+# Run co-deploy scenarios against running Ferrum + infra:
+python3 -c "
+import sys, json
+sys.path.insert(0, 'demo/lib')
+from infra_feature_detect import detect
+from co_deploy_scenarios import run_all
+from pathlib import Path
+fs = detect()
+results = run_all('http://127.0.0.1:18080', Path('.'), fs)
+print(json.dumps(results['summary'], indent=2))
+"
+```
+
+Expected output when infra is not running:
+
+```json
+{"ran": 0, "skipped": 4, "errors": 0, "all_passed": true}
+```
+
+Expected output when infra is running and Ferrum co-deploy overlay is active:
+
+```json
+{"ran": 4, "skipped": 0, "errors": 0, "all_passed": true}
+```
+
+Static checks for co-deploy scripts:
+
+```bash
+python3 -m compileall -q demo/lib/infra_feature_detect.py demo/lib/co_deploy_scenarios.py
+docker compose -f demo/docker-compose.ga4gh-infra.yml config  # needs GA4GH_INFRA_SRC + FERRUM_GA4GH_DEMO_ROOT
+```
+
+HelixTest co-deploy conformance: see [HelixTest ferrum+infra mode](../HelixTest/helixtest/docs/ferrum.md#ferruminfra-co-deploy-mode).

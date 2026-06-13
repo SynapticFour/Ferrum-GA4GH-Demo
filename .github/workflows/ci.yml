@@ -53,9 +53,35 @@ jobs:
           assert not fs.any_available(), 'Should return no features for unreachable gateway'
           print('Graceful degradation OK')
           "
-      - name: Verify run script parses --africa flag
-        run: bash -n run && grep -q '\-\-africa' run && echo 'Flag present'
+      - name: Verify run script parses --africa and --with-infra flags
+        run: |
+          bash -n run
+          grep -q '\-\-africa' run && echo '--africa present'
+          grep -q '\-\-with-infra' run && echo '--with-infra present'
       - name: Verify docker-compose.africa.yml is valid YAML
         run: |
           pip install --quiet pyyaml
           python3 -c "import yaml; yaml.safe_load(open('demo/docker-compose.africa.yml'))"
+
+  co-deploy-scripts-check:
+    if: github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Syntax check co-deploy Python files
+        run: python3 -m compileall -q demo/lib/infra_feature_detect.py demo/lib/co_deploy_scenarios.py
+      - name: Import check (no running stack needed)
+        run: |
+          cd demo/lib
+          python3 -c "import infra_feature_detect; print('infra_feature_detect OK')"
+          python3 -c "import co_deploy_scenarios; print('co_deploy_scenarios OK')"
+          python3 -c "
+          from infra_feature_detect import detect
+          fs = detect(broker='http://127.0.0.1:1')
+          assert not fs.any_available(), 'Should return no features for unreachable infra'
+          print('Graceful degradation OK')
+          "
+      - name: Verify co-deploy compose YAML
+        run: |
+          pip install --quiet pyyaml
+          python3 -c "import yaml; yaml.safe_load(open('demo/docker-compose.co-deploy.yml'))"

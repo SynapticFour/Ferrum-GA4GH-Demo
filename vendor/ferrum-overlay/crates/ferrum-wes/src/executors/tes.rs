@@ -143,6 +143,10 @@ fn build_tes_task_request(run: &WesRun, work_dir: &Path) -> Result<TesTaskReques
         .ok()
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
+    let container_mount_prefix = std::env::var("FERRUM_WES_TES_CONTAINER_MOUNT_PREFIX")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
 
     let wt = run.workflow_type.to_lowercase();
     let wf_url = run.workflow_url.as_str();
@@ -165,8 +169,12 @@ fn build_tes_task_request(run: &WesRun, work_dir: &Path) -> Result<TesTaskReques
 
     let mut volumes: Option<Vec<serde_json::Value>> = None;
     if let Some(ref prefix) = host_prefix {
-        let abs = format!("{}/{}", prefix.trim_end_matches('/'), run.run_id);
-        let bind = format!("{abs}:{abs}:rw");
+        let host_run = format!("{}/{}", prefix.trim_end_matches('/'), run.run_id);
+        let container_run = container_mount_prefix
+            .as_ref()
+            .map(|cp| format!("{}/{}", cp.trim_end_matches('/'), run.run_id))
+            .unwrap_or_else(|| host_run.clone());
+        let bind = format!("{host_run}:{container_run}:rw");
         volumes = Some(vec![serde_json::Value::String(bind)]);
     }
 
@@ -181,9 +189,14 @@ fn build_tes_task_request(run: &WesRun, work_dir: &Path) -> Result<TesTaskReques
         || (nf_file && matches!(wt.as_str(), "nextflow" | "nxf" | "nfl"));
     let executor_workdir = if bash_or_file_mode {
         container_workdir.clone().or_else(|| {
-            host_prefix
+            container_mount_prefix
                 .as_ref()
-                .map(|p| format!("{}/{}", p.trim_end_matches('/'), run.run_id))
+                .map(|cp| format!("{}/{}", cp.trim_end_matches('/'), run.run_id))
+                .or_else(|| {
+                    host_prefix
+                        .as_ref()
+                        .map(|p| format!("{}/{}", p.trim_end_matches('/'), run.run_id))
+                })
         })
     } else {
         container_workdir.clone()

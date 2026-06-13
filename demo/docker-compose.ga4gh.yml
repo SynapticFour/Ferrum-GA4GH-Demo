@@ -14,7 +14,8 @@ services:
       FERRUM_TES_BACKEND: docker
       FERRUM_TES_WORK_DIR: /tmp/tes-jobs
       FERRUM_WES_WORK_DIR: /wes-runs
-      # Same host path as the volume mount below; WES→TES bind uses FERRUM_WES_TES_WORK_HOST_PREFIX.
+      # Host path for Docker bind source. On macOS use symmetric host:host mounts so Cromwell's
+      # nested `docker run -v` paths resolve on the Docker Desktop host (see TES-DOCKER-BACKEND.md).
       FERRUM_WES_TES_WORK_HOST_PREFIX: ${FERUM_WES_WORK_HOST:?set FERUM_WES_WORK_HOST to host abs path}
       FERRUM_WES_TES_WDL_BASH_LAUNCH: "1"
       FERRUM_WES_TES_NEXTFLOW_FILE_LAUNCH: "1"
