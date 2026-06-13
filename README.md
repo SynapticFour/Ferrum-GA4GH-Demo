@@ -18,7 +18,24 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 
 ```bash
 ./run
+# or: make up
 ```
+
+Co-deploy **Ferrum + ga4gh-infra** (identity plane + data/compute):
+
+```bash
+./run --with-infra
+# or: make up-with-infra
+```
+
+### Stop / tear down
+
+| Goal | Command |
+|------|---------|
+| Stop containers, **keep data** | `./run --down` or `make down` |
+| Remove volumes (fresh start) | `./run --destroy` or `make destroy` |
+
+Default `./run` resets volumes before start unless you pass `--no-reset`.
 
 | Flag | Effect |
 |------|--------|
