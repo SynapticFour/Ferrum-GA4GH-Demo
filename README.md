@@ -6,6 +6,10 @@ Scope boundary: this demo stays **GA4GH benchmark-centric** (TRS/DRS/WES/TES). M
 
 > **Legal notice:** This repository documents technical capabilities and operating guidance. It is not legal advice and does not by itself provide regulatory certification or compliance guarantees. Compliance outcomes depend on operator configuration, contracts, and organisational controls.
 
+## SynapticFour GA4GH stack
+
+This demo is one of five coordinated repositories. See **[docs/ECOSYSTEM.md](docs/ECOSYSTEM.md)** for roles, ports, and cross-repo quick starts.
+
 ## Prerequisites
 
 Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum, images, public data). **Sizing & phases:** [docs/architecture.md](docs/architecture.md).
@@ -24,6 +28,7 @@ Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum,
 | `--crypt4gh` | Requires `FERRUM_GA4GH_CRYPT4GH_PUBKEY`: adds optional **client-header** timing to `drs_micro.json` (see [benchmark.md](docs/benchmark.md)) |
 | `--no-reset` | Keep compose volumes — see [architecture → Demo scope](docs/architecture.md#demo-scope-phases) |
 | `--africa` | Apply Africa resilience overlay; run Africa scenarios when features detected |
+| `--with-infra` | Co-deploy **ga4gh-infra** + Ferrum external auth; see [architecture → Co-deploy](docs/architecture.md#co-deploy-with-ga4gh-infra) |
 | `--help` | Full usage |
 
 ### Africa resilience features
@@ -75,6 +80,7 @@ Details, median table, and object-id notes: [docs/benchmark.md → Publication-f
 
 | File | Role |
 |------|------|
+| [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) | How this repo fits the five-repo SynapticFour stack |
 | [docs/architecture.md](docs/architecture.md) | Diagram, data plane, overlay, resources |
 | [docs/benchmark.md](docs/benchmark.md) | Last run, GA4GH checklist, **DRS micro** keys + medians, **publication-friendly** block (engines, **n**, dataset sizes) |
 
@@ -88,7 +94,7 @@ Details, median table, and object-id notes: [docs/benchmark.md → Publication-f
 | `demo/scenarios/video-script/` | HeyGen/Synthesia script (DE/EN/FR) for Ferrum Edge |
 | `demo/docker-compose.ga4gh.yml` | TES, WES workdir, `docker.sock`, Crypt4GH keys |
 | `demo/lib/*.py` | Ingest, WES JSON, metrics, Africa scenarios, snapshots |
-| `vendor/ferrum-overlay/` | Minimal Ferrum patches: gateway TES env + small `ferrum-wes` TES submit tweaks (see architecture) |
+| `vendor/ferrum-overlay/` | Minimal Ferrum WES/TES patch for demo workdir mounts (upstream Ferrum gateway used as-is) |
 | `workflows/tiny_hc.{wdl,nf}` | Minimal HaplotypeCaller |
 | `scripts/` | Fetch, TRS cache, DRS micro-bench, `dataset_profile.py`, `update_docs.py` |
 
