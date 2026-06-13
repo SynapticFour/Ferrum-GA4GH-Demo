@@ -375,10 +375,6 @@ else
   pipeline_pass primary "${FERRUM_GA4GH_ENCRYPT_INGEST:-0}"
 fi
 
-echo "[demo] dataset on-disk profile + engine timing merge..."
-python3 "$ROOT/scripts/dataset_profile.py" "$ROOT" || true
-python3 "$ROOT/demo/lib/update_engine_compare.py" "$ROOT" || true
-
 # ── Africa feature detection + scenarios (always runs; gracefully skips unavailable features) ──
 echo "[demo] detecting Africa features in running Ferrum instance..."
 python3 "$ROOT/demo/lib/africa_feature_detect.py" "$GATEWAY" \
@@ -431,6 +427,10 @@ else
   METRICS_MODE=single
 fi
 python3 "$ROOT/demo/lib/compose_metrics.py" "$METRICS_MODE" "$ROOT"
+
+echo "[demo] dataset on-disk profile + engine timing merge..."
+python3 "$ROOT/scripts/dataset_profile.py" "$ROOT" || true
+python3 "$ROOT/demo/lib/update_engine_compare.py" "$ROOT" || true
 
 python3 "$ROOT/scripts/update_docs.py" \
   --repo-root "$ROOT" \
