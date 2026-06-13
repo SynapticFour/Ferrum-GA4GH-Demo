@@ -19,6 +19,8 @@ usage() {
   cat <<'EOF'
 Usage: ./run [options]
 
+  --down           Stop the demo stack (keep volumes). Same as: make down
+  --destroy        Stop the demo stack and remove volumes. Same as: make destroy
   --wdl            Run WDL/Cromwell path via WES→TES (default).
   --nextflow       Run Nextflow (same GATK logic as tiny_hc.wdl).
   --macro          Phase 2: plain + Crypt4GH-at-rest ingests (two WES+hap passes); merges DRS micro into
@@ -51,6 +53,12 @@ while [[ $# -gt 0 ]]; do
     -h|--help)
       usage
       exit 0
+      ;;
+    --down)
+      exec bash "$ROOT/scripts/stack-down.sh"
+      ;;
+    --destroy)
+      exec bash "$ROOT/scripts/stack-down.sh" --volumes
       ;;
     --wdl)
       USE_WDL=1
