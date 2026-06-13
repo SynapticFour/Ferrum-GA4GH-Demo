@@ -65,7 +65,7 @@ All of it. On a Raspberry Pi."
 ---
 
 ## SCENE 5 — THE CALL TO ACTION (2:25–3:00)
-*Visual: synapticfour.com/en/ferrum-edge on screen*
+*Visual: synapticfour.com/en/ferrum-field on screen*
 
 "If your lab sequences data locally and needs to participate in international
 research networks — without sending your data abroad — Ferrum Edge is built
@@ -76,7 +76,7 @@ bioinformatics units. The software is open source. The pilot is free."
 
 "One device. Ninety dollars. Global GA4GH interoperability."
 
-*[End card: synapticfour.com/en/ferrum-africa · contact@synapticfour.com]*
+*[End card: synapticfour.com/en/ferrum-field · contact@synapticfour.com]*
 
 ---
 

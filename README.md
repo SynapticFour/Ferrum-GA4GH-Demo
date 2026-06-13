@@ -65,7 +65,7 @@ absent, scenarios are skipped gracefully — the EU/GA4GH benchmark is unaffecte
 
 Results: `results/africa_results.json` — feature detection + per-scenario outcomes.
 
-See [synapticfour.com/en/ferrum-africa](https://synapticfour.com/en/ferrum-africa) for the full Africa deployment guide.
+See [synapticfour.com/en/ferrum-field](https://synapticfour.com/en/ferrum-field) for the field & offline deployment overview.
 
 **Environment:** `FERRUM_GA4GH_ENGINE` (`wdl` \| `nextflow`), `FERRUM_GA4GH_MACRO_COMPARE`, `FERRUM_GA4GH_ENCRYPT_INGEST`, `FERRUM_GA4GH_CRYPT4GH_PUBKEY`, `FERRUM_GA4GH_RESET_VOLUMES`, `FERRUM_TES_DOCKER_PLATFORM` (arm64 defaults to `linux/amd64` for Nextflow). See `./run --help`.
 
