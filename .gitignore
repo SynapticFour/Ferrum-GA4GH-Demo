@@ -26,3 +26,6 @@ build/
 target/
 .pytest_cache/
 .ruff_cache/
+
+# Local demo run logs
+eploy-*.log
