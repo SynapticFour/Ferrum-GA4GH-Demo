@@ -1,9 +1,9 @@
 {
-  "TinyGermlineHC.input_bam": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KV06JQJVPRMM2R8AMBA4R81M/stream",
-  "TinyGermlineHC.input_bam_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KV06JQKKJ82XCDSF3RJ43CMZ/stream",
-  "TinyGermlineHC.ref_fasta": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KV06JQM0K5AXECAY1YXCJ9KF/stream",
-  "TinyGermlineHC.ref_fasta_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KV06JQMBWVDAPJ2HB90P621M/stream",
-  "TinyGermlineHC.truth_vcf": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KV06JQMT49RH27RYNAQ5GRWP/stream",
-  "TinyGermlineHC.truth_vcf_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KV06JQN7YHHWYR3WVFDNRT08/stream",
+  "TinyGermlineHC.input_bam": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5CYPJZ8WAGB97ZAG6F7/stream",
+  "TinyGermlineHC.input_bam_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5DKVCDD3CRFM33DKDVY/stream",
+  "TinyGermlineHC.ref_fasta": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5DZZ7E2XRA192QGQR18/stream",
+  "TinyGermlineHC.ref_fasta_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5EAWMC9KMXMCC6DDWR9/stream",
+  "TinyGermlineHC.truth_vcf": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5ENG26F1TYXAT7Q0BD6/stream",
+  "TinyGermlineHC.truth_vcf_index": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5F2Y069563CJWSVMX0C/stream",
   "TinyGermlineHC.interval": "22:1700-2300"
 }
