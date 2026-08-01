@@ -7,8 +7,6 @@ This repository validates behavior through lightweight CI checks plus end-to-end
 - `.github/workflows/ci.yml`
   - Bash syntax checks for entrypoints and shell scripts.
   - Python bytecode compilation checks for `demo/lib` and `scripts`.
-- `.github/workflows/quality-gate.yml`
-  - Ensures repository workflow definitions are present.
 - `.github/workflows/codeql.yml`, `.github/workflows/secret-scan.yml`, `.github/workflows/dependency-review.yml`
   - Security and dependency policy checks.
 
