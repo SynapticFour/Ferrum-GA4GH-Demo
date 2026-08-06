@@ -37,6 +37,9 @@ PY
 export STATIC_PORT="${STATIC_PORT:-$(pick_free_port)}"
 GATEWAY="http://127.0.0.1:${GATEWAY_PORT}"
 export FERRUM_GA4GH_ENGINE="${FERRUM_GA4GH_ENGINE:-wdl}"
+export FERRUM_GA4GH_CALLER="${FERRUM_GA4GH_CALLER:-gatk}"
+export FERRUM_GA4GH_GATK_RS_IMAGE="${FERRUM_GA4GH_GATK_RS_IMAGE:-gatkr/gatk-rs:latest}"
+export FERRUM_GA4GH_GATK_RS_SOFT="${FERRUM_GA4GH_GATK_RS_SOFT:-1}"
 
 TS_START="$(date +%s)"
 mkdir -p "$FERUM_WES_WORK_HOST" "$ROOT/results" "$ROOT/workflows/cached" "$ROOT/data" "$ROOT/drs"
@@ -44,6 +47,43 @@ mkdir -p "$FERUM_WES_WORK_HOST" "$ROOT/results" "$ROOT/workflows/cached" "$ROOT/
 command -v docker >/dev/null || { echo "docker required" >&2; exit 1; }
 command -v python3 >/dev/null || { echo "python3 required" >&2; exit 1; }
 command -v curl >/dev/null || { echo "curl required (for static docker CLI in TES/Cromwell)" >&2; exit 1; }
+
+# Optional Alpha path: soft-skip before stack build if gatk-rs image is unavailable.
+if [[ "${FERRUM_GA4GH_CALLER}" == "gatk-rs" ]]; then
+  echo "[demo] caller=gatk-rs image=${FERRUM_GA4GH_GATK_RS_IMAGE} (optional Alpha; default remains Broad GATK)"
+  docker pull "${FERRUM_GA4GH_GATK_RS_IMAGE}" >/dev/null 2>&1 || true
+  if ! docker image inspect "${FERRUM_GA4GH_GATK_RS_IMAGE}" >/dev/null 2>&1; then
+    python3 - <<PY
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+root = Path("$ROOT")
+out = {
+  "schema_version": 1,
+  "stage": "gatk_rs_wes",
+  "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+  "status": "skipped",
+  "reason": "image_missing",
+  "image": "${FERRUM_GA4GH_GATK_RS_IMAGE}",
+  "soft": True,
+  "honesty": (
+    "Optional gatk-rs WES path soft-skipped: Docker image not present. "
+    "Default Ferrum Nextflow + Broad GATK path is unchanged. "
+    "gatk-rs is Alpha — absence of the image is not a Ferrum product failure."
+  ),
+}
+(root / "results").mkdir(parents=True, exist_ok=True)
+(root / "results" / "gatk_rs_wes_result.json").write_text(json.dumps(out, indent=2) + "\n", encoding="utf-8")
+print(json.dumps({"ok": True, "skipped": True, "wrote": str(root / "results" / "gatk_rs_wes_result.json")}))
+PY
+    if [[ "${FERRUM_GA4GH_GATK_RS_SOFT}" == "1" ]]; then
+      echo "[demo] gatk-rs image missing — soft-skip (set FERRUM_GA4GH_GATK_RS_SOFT=0 to hard-fail)"
+      exit 0
+    fi
+    echo "[demo] gatk-rs image missing and FERRUM_GA4GH_GATK_RS_SOFT=0 — hard-fail" >&2
+    exit 3
+  fi
+fi
 
 echo "[demo] ensuring Linux docker CLI for Cromwell/Nextflow-in-TES (nested docker runs)..."
 chmod +x "$ROOT/scripts/ensure_docker_cli_static.sh"
@@ -119,9 +159,14 @@ STATIC_PID=$!
 sleep 1
 
 if [[ "${FERRUM_GA4GH_ENGINE}" == "nextflow" ]]; then
-  WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/workflows/tiny_hc.nf"
+  if [[ "${FERRUM_GA4GH_CALLER}" == "gatk-rs" ]]; then
+    WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/workflows/tiny_hc_gatk_rs.nf"
+    echo "[demo] engine=nextflow caller=gatk-rs workflow=$WORKFLOW_URL"
+  else
+    WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/workflows/tiny_hc.nf"
+    echo "[demo] engine=nextflow caller=gatk (Broad) workflow=$WORKFLOW_URL"
+  fi
   PARAMS_JSON="$ROOT/demo/nf_params.json"
-  echo "[demo] engine=nextflow workflow=$WORKFLOW_URL"
 else
   WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/workflows/tiny_hc.wdl"
   PARAMS_JSON="$ROOT/demo/inputs.json"
@@ -159,6 +204,10 @@ echo "[demo] building & starting Ferrum stack (docker compose)..."
 echo "[demo] pre-pull workflow images (best-effort; skip if offline)..."
 docker pull broadinstitute/cromwell:93-0232cbd >/dev/null 2>&1 || true
 docker pull broadinstitute/gatk:4.4.0.0 >/dev/null 2>&1 || true
+if [[ "${FERRUM_GA4GH_CALLER}" == "gatk-rs" ]]; then
+  docker pull "${FERRUM_GA4GH_GATK_RS_IMAGE}" >/dev/null 2>&1 || true
+  docker pull quay.io/biocontainers/htslib:1.19--h5e77b09_0 >/dev/null 2>&1 || true
+fi
 NEXTFLOW_IMAGE="nextflow/nextflow:24.10.3"
 if [[ "${FERRUM_GA4GH_ENGINE}" == "nextflow" ]]; then
   case "$(uname -m)" in

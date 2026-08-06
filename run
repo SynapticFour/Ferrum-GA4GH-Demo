@@ -7,6 +7,7 @@ cd "$ROOT"
 
 USE_WDL=1
 USE_NEXTFLOW=0
+USE_GATK_RS=0
 USE_CRYPT4GH=0
 USE_MACRO=0
 GIAB_FULL=0
@@ -23,6 +24,8 @@ Usage: ./run [options]
   --destroy        Stop the demo stack and remove volumes. Same as: make destroy
   --wdl            Run WDL/Cromwell path via WES→TES (default).
   --nextflow       Run Nextflow (same GATK logic as tiny_hc.wdl).
+  --gatk-rs        Optional Alpha: Nextflow + gatk-rs caller (workflows/tiny_hc_gatk_rs.nf).
+                   Soft-skips if image missing (default FERRUM_GA4GH_GATK_RS_SOFT=1). Not the default GIAB path.
   --macro          Phase 2: plain + Crypt4GH-at-rest ingests (two WES+hap passes); merges DRS micro into
                    results/drs_micro.json (plain ref_fasta vs at-rest ref_fasta server decrypt). See docs/benchmark.md.
   --crypt4gh       With FERRUM_GA4GH_CRYPT4GH_PUBKEY: adds X-Crypt4GH-Public-Key leg to drs_micro (PEM→one-line base64).
@@ -39,7 +42,10 @@ Usage: ./run [options]
 Details: docs/architecture.md
 
 Environment (also used by demo/run.sh):
-  FERRUM_GA4GH_ENGINE   wdl | nextflow (set by --wdl / --nextflow)
+  FERRUM_GA4GH_ENGINE   wdl | nextflow (set by --wdl / --nextflow / --gatk-rs)
+  FERRUM_GA4GH_CALLER   gatk (default) | gatk-rs (set by --gatk-rs)
+  FERRUM_GA4GH_GATK_RS_IMAGE  docker image for gatk-rs NF (default gatkr/gatk-rs:latest)
+  FERRUM_GA4GH_GATK_RS_SOFT   1 (default) = soft-skip if image missing / optional path fails early
   FERRUM_GA4GH_MACRO_COMPARE  set to 1 by --macro (Phase 2 A/B)
   FERRUM_GA4GH_ENCRYPT_INGEST  1 = single run with encrypt=true ingest (requires node keys mount)
   FERRUM_GA4GH_CRYPT4GH_PUBKEY  optional PEM/node.pub for optional drs_micro "crypt4gh" header timing (see docs/benchmark.md)
@@ -65,6 +71,11 @@ while [[ $# -gt 0 ]]; do
       USE_NEXTFLOW=0
       ;;
     --nextflow)
+      USE_NEXTFLOW=1
+      USE_WDL=0
+      ;;
+    --gatk-rs)
+      USE_GATK_RS=1
       USE_NEXTFLOW=1
       USE_WDL=0
       ;;
@@ -107,6 +118,12 @@ if [[ "$USE_NEXTFLOW" -eq 1 ]]; then
   export FERRUM_GA4GH_ENGINE=nextflow
 else
   export FERRUM_GA4GH_ENGINE=wdl
+fi
+
+if [[ "$USE_GATK_RS" -eq 1 ]]; then
+  export FERRUM_GA4GH_CALLER=gatk-rs
+else
+  export FERRUM_GA4GH_CALLER="${FERRUM_GA4GH_CALLER:-gatk}"
 fi
 
 if [[ "$USE_MACRO" -eq 1 ]]; then
