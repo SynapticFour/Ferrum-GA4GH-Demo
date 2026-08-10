@@ -1,36 +1,36 @@
 {
   "note": "DRS URIs use the gateway hostname Cromwell containers resolve on the compose network.",
-  "encrypt_at_ingest": false,
+  "encrypt_at_ingest": true,
   "objects": {
     "input_bam": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KVTCN5CYPJZ8WAGB97ZAG6F7",
-      "object_id": "01KVTCN5CYPJZ8WAGB97ZAG6F7",
-      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5CYPJZ8WAGB97ZAG6F7/stream"
+      "drs_uri": "drs://ferrum-gateway:8080/01KZNCC9Q78ZYFSZYGS9PBK7TZ",
+      "object_id": "01KZNCC9Q78ZYFSZYGS9PBK7TZ",
+      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KZNCC9Q78ZYFSZYGS9PBK7TZ/stream"
     },
     "input_bam_index": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KVTCN5DKVCDD3CRFM33DKDVY",
-      "object_id": "01KVTCN5DKVCDD3CRFM33DKDVY",
-      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5DKVCDD3CRFM33DKDVY/stream"
+      "drs_uri": "drs://ferrum-gateway:8080/01KZNCC9XHJ7VPV4RR995GQMVX",
+      "object_id": "01KZNCC9XHJ7VPV4RR995GQMVX",
+      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KZNCC9XHJ7VPV4RR995GQMVX/stream"
     },
     "ref_fasta": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KVTCN5DZZ7E2XRA192QGQR18",
-      "object_id": "01KVTCN5DZZ7E2XRA192QGQR18",
-      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5DZZ7E2XRA192QGQR18/stream"
+      "drs_uri": "drs://ferrum-gateway:8080/01KZNCC9ZTR1BTHCWZADH7PPWZ",
+      "object_id": "01KZNCC9ZTR1BTHCWZADH7PPWZ",
+      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KZNCC9ZTR1BTHCWZADH7PPWZ/stream"
     },
     "ref_fasta_index": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KVTCN5EAWMC9KMXMCC6DDWR9",
-      "object_id": "01KVTCN5EAWMC9KMXMCC6DDWR9",
-      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5EAWMC9KMXMCC6DDWR9/stream"
+      "drs_uri": "drs://ferrum-gateway:8080/01KZNCCA1DADQ0DJ0ZGP3RTYPB",
+      "object_id": "01KZNCCA1DADQ0DJ0ZGP3RTYPB",
+      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KZNCCA1DADQ0DJ0ZGP3RTYPB/stream"
     },
     "truth_vcf": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KVTCN5ENG26F1TYXAT7Q0BD6",
-      "object_id": "01KVTCN5ENG26F1TYXAT7Q0BD6",
-      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5ENG26F1TYXAT7Q0BD6/stream"
+      "drs_uri": "drs://ferrum-gateway:8080/01KZNCCA2R11FYFMAR631PDGHR",
+      "object_id": "01KZNCCA2R11FYFMAR631PDGHR",
+      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KZNCCA2R11FYFMAR631PDGHR/stream"
     },
     "truth_vcf_index": {
-      "drs_uri": "drs://ferrum-gateway:8080/01KVTCN5F2Y069563CJWSVMX0C",
-      "object_id": "01KVTCN5F2Y069563CJWSVMX0C",
-      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KVTCN5F2Y069563CJWSVMX0C/stream"
+      "drs_uri": "drs://ferrum-gateway:8080/01KZNCCA3XYND3N55S9PQT5KSR",
+      "object_id": "01KZNCCA3XYND3N55S9PQT5KSR",
+      "stream_url": "http://ferrum-gateway:8080/ga4gh/drs/v1/objects/01KZNCCA3XYND3N55S9PQT5KSR/stream"
     }
   }
 }

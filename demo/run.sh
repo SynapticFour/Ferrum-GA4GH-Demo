@@ -92,12 +92,22 @@ DOCKER_CLI_HOST="$ROOT/.cache/docker-cli-static/docker"
 export FERRUM_TES_DOCKER_MOUNT_SOCKET=1
 export FERRUM_TES_DOCKER_CLI_HOST_PATH="$DOCKER_CLI_HOST"
 
-FERUM_SRC="${FERUM_SRC:-$ROOT/.cache/ferrum}"
+# Prefer FERUM_SRC; accept documented alias FERRUM_SRC.
+FERUM_SRC="${FERUM_SRC:-${FERRUM_SRC:-$ROOT/.cache/ferrum}}"
 if [[ ! -d "$FERUM_SRC/.git" ]]; then
   echo "[demo] cloning Ferrum into $FERUM_SRC ..."
   mkdir -p "$(dirname "$FERUM_SRC")"
   git clone --depth 1 https://github.com/SynapticFour/Ferrum.git "$FERUM_SRC"
+  # Optional pin from PINNED_VERSIONS.txt (Ferrum-git=…)
+  _pin="$(awk -F= '/^Ferrum-git=/{print $2; exit}' "$ROOT/PINNED_VERSIONS.txt" 2>/dev/null || true)"
+  if [[ -n "${_pin// /}" ]]; then
+    echo "[demo] checking out pinned Ferrum-git=${_pin}"
+    git -C "$FERUM_SRC" fetch --depth 1 origin "$_pin" 2>/dev/null \
+      && git -C "$FERUM_SRC" checkout "$_pin" \
+      || echo "[demo] warn: could not checkout pin $_pin — using clone tip"
+  fi
 fi
+echo "[demo] Ferrum sources: $FERUM_SRC ($(git -C "$FERUM_SRC" rev-parse --short HEAD 2>/dev/null || echo unknown))"
 
 GA4GH_INFRA_SRC="${GA4GH_INFRA_SRC:-$(dirname "$FERUM_SRC")/ga4gh-infra}"
 if [[ "${FERRUM_GA4GH_WITH_INFRA:-0}" == "1" ]]; then

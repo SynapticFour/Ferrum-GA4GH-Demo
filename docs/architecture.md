@@ -9,7 +9,7 @@ Technical reference for this demo. **Operator entry:** [README](../README.md) (`
 | 1 | DRS `/stream` micro-timing (plain; optional client header) | Every pass; `./run --crypt4gh` + `FERRUM_GA4GH_CRYPT4GH_PUBKEY` (PEM → single-line base64 in script) |
 | 2 | Macro: plain vs Crypt4GH-at-rest ingest + **dual DRS micro** (`ref_fasta` plain oid vs encrypted oid) | `./run --macro` or `./run --nextflow --macro` |
 | 3 | Nextflow same slice as WDL | `./run --nextflow` |
-| 4 | Docs / `./run --help` / CI smoke | Done |
+| 4 | Docs / `./run --help` / **syntax CI** | Done (stack runs are **local-only** — see [COVERAGE.md](./COVERAGE.md)) |
 
 **`./run --no-reset`** sets `FERRUM_GA4GH_RESET_VOLUMES=0` and skips `compose down -v`. Faster iteration, but **`ferrum-init` migrations** can conflict with an existing DB. If init fails, run a **full** `./run` without `--no-reset`.
 
@@ -81,7 +81,7 @@ Crypt4GH: DRS micro (macro) = plaintext stream vs at-rest ciphertext + **server 
 
 Single `./run` (no `--macro`): only the **current** ingest’s `ref_fasta` is timed under `plain`; `crypt4gh_at_rest` is absent unless you pass `--encrypted-object-id` manually. Full reviewer-facing tables: [benchmark.md → Publication-friendly summary](./benchmark.md#publication-friendly-summary).
 
-Extra clone path: `FERUM_SRC` (`.cache/ferrum`) — second checkout only if you build separately.
+Extra clone path: `FERUM_SRC` / alias `FERRUM_SRC` (default `.cache/ferrum`) — second checkout only if you build separately. See [PINNED_VERSIONS.txt](../PINNED_VERSIONS.txt).
 
 ## Patch overlay (demo)
 

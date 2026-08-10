@@ -12,6 +12,14 @@ This repository validates behavior through lightweight CI checks plus end-to-end
 
 ## Required local verification for behavior changes
 
+1. Static: `make smoke-syntax` (or the commands in CI / below).
+2. Behavioral: `./run` (WDL), and when relevant `./run --nextflow` / `./run --macro` / `./run --with-infra`.
+3. Evidence gate: `make smoke-evidence` (add `--strict` / `make smoke-evidence-strict` after `--macro`).
+
+Coverage map (claim → command → artefact): [docs/COVERAGE.md](docs/COVERAGE.md).
+
+### Static commands (CI parity)
+
 1. Run static checks:
    - `bash -n run`
    - `bash -n demo/run.sh`
@@ -22,9 +30,8 @@ This repository validates behavior through lightweight CI checks plus end-to-end
    - `./run` (WDL path), and when relevant `./run --nextflow`.
    - Optional (needs Ferrum Africa image): `bash demo/scenarios/village-network/run-village-demo.sh`
 3. Confirm produced artifacts are coherent:
-   - `results/benchmark.json`
-   - `results/metrics.json`
-   - `results/drs_micro.json`
+   - `make smoke-evidence`
+   - or inspect `results/benchmark.json`, `results/metrics.json`, `results/drs_micro.json`
 
 ## DRS expectation in pipeline runs
 

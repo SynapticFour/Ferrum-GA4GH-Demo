@@ -68,7 +68,9 @@ Results: `results/africa_results.json` — feature detection + per-scenario outc
 
 See [synapticfour.com/en/ferrum-field](https://synapticfour.com/en/ferrum-field) for the field & offline deployment overview.
 
-**Environment:** `FERRUM_GA4GH_ENGINE` (`wdl` \| `nextflow`), `FERRUM_GA4GH_CALLER` (`gatk` \| `gatk-rs`), `FERRUM_GA4GH_GATK_RS_IMAGE`, `FERRUM_GA4GH_GATK_RS_SOFT`, `FERRUM_GA4GH_MACRO_COMPARE`, `FERRUM_GA4GH_ENCRYPT_INGEST`, `FERRUM_GA4GH_CRYPT4GH_PUBKEY`, `FERRUM_GA4GH_RESET_VOLUMES`, `FERRUM_TES_DOCKER_PLATFORM` (arm64 defaults to `linux/amd64` for Nextflow). See `./run --help`.
+**Environment:** `FERRUM_GA4GH_ENGINE` (`wdl` \| `nextflow`), `FERRUM_GA4GH_CALLER` (`gatk` \| `gatk-rs`), `FERRUM_GA4GH_GATK_RS_IMAGE`, `FERRUM_GA4GH_GATK_RS_SOFT`, `FERRUM_GA4GH_MACRO_COMPARE`, `FERRUM_GA4GH_ENCRYPT_INGEST`, `FERRUM_GA4GH_CRYPT4GH_PUBKEY`, `FERRUM_GA4GH_RESET_VOLUMES`, `FERRUM_TES_DOCKER_PLATFORM` (arm64 defaults to `linux/amd64` for Nextflow), `FERUM_SRC` / `FERRUM_SRC` (sibling Ferrum checkout). See `./run --help`.
+
+**Verify artefacts after a run:** `make smoke-evidence` (or `make smoke-evidence-strict` after `--macro`). Coverage map: [docs/COVERAGE.md](docs/COVERAGE.md).
 
 **Outputs:** `results/` — `query.vcf.gz`, `benchmark.json`, `metrics.json`, **`drs_micro.json`**, **`africa_results.json`** (see below), optional `phase2_*`, `benchmark.phase2_*`, **`drs_mapping_phase_plain.json`** after `--macro`. **Docs:** `scripts/update_docs.py` refreshes the table below and [docs/benchmark.md](docs/benchmark.md).
 
@@ -99,6 +101,8 @@ Details, median table, and object-id notes: [docs/benchmark.md → Publication-f
 | File | Role |
 |------|------|
 | [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) | How this repo fits the five-repo SynapticFour stack |
+| [docs/COVERAGE.md](docs/COVERAGE.md) | What Demo proves vs Showcase/HelixTest; smoke targets |
+| [PINNED_VERSIONS.txt](PINNED_VERSIONS.txt) | Ferrum/git + executor image pins |
 | [docs/architecture.md](docs/architecture.md) | Diagram, data plane, overlay, resources |
 | [docs/benchmark.md](docs/benchmark.md) | Last run, GA4GH checklist, **DRS micro** keys + medians, **publication-friendly** block (engines, **n**, dataset sizes) |
 
@@ -124,14 +128,14 @@ Details, median table, and object-id notes: [docs/benchmark.md → Publication-f
 | Precision | 1.0 |
 | Recall | 1.0 |
 | F1 | 1.0 |
-| Runtime (demo) | 115 s |
-| WES engine | nextflow |
-| DRS stream plain `ref_fasta` (median s) | 0.007154832999999999 |
-| DRS stream Crypt4GH **at-rest** (median s, server decrypt) | n/a (`./run --macro` merges this) |
+| Runtime (demo) | 98 s |
+| WES engine | wdl |
+| DRS stream plain `ref_fasta` (median s) | 0.010259833999999995 |
+| DRS stream Crypt4GH **at-rest** (median s, server decrypt) | 0.011037083000000003 |
 | DRS stream client header `X-Crypt4GH-Public-Key` (median s) | n/a (set `FERRUM_GA4GH_CRYPT4GH_PUBKEY` for header leg) |
 | DRS micro repetitions (n) | 3 |
 | BAM slice (on disk) | 847 B |
-| WES run | `01KVTCN5H7BRXN1RS4C39PDQJ1` |
+| WES run | `01KZNCCAAG8616KAVS3KGA1H21` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 

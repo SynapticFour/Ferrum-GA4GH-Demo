@@ -1,0 +1,21 @@
+# Ferrum-GA4GH-Demo pins — what this harness builds / clones against.
+# Refresh when cutting a coordinated stack release (see Ferrum VERSIONS.lock).
+
+# Preferred sibling override (either spelling works — see demo/run.sh):
+#   export FERUM_SRC=/path/to/Ferrum
+#   export FERRUM_SRC=/path/to/Ferrum   # alias
+
+# When cloning into .cache/ferrum, checkout this SHA if set (empty = tip of default branch).
+# Keep in sync with a known-good Ferrum main commit used for paper/demo evidence.
+Ferrum-git=a4b54f83a05ad20edf9e4aa5fc452a132d83182b
+
+# Optional infra sibling for ./run --with-infra
+# GA4GH-INFRA-git=  (empty = tip; prefer tag ga4gh-infra-v0.1.0 when locking)
+
+# Executor images (demo overlay; see vendor/ferrum-overlay and compose)
+Cromwell-image=broadinstitute/cromwell:93-0232cbd
+Nextflow-tag=24.10.3
+GATK-image=broadinstitute/gatk:4.4.0.0
+
+# Soft Alpha path
+gatk-rs-image=gatkr/gatk-rs:latest

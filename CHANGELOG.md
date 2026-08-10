@@ -9,11 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Coverage map + evidence smokes** — [docs/COVERAGE.md](docs/COVERAGE.md), `PINNED_VERSIONS.txt`, `make smoke-syntax` / `smoke-evidence` / `smoke-evidence-strict`.
 - **Optional `--gatk-rs` path** — Nextflow workflow `workflows/tiny_hc_gatk_rs.nf` (Alpha Rust caller + htslib compress/index). Soft-skips when `gatkr/gatk-rs` image is missing (`FERRUM_GA4GH_GATK_RS_SOFT=1`). Default Broad GATK `tiny_hc.nf` / WDL unchanged.
 
 ### Changed
 
-- **Benchmark artefacts** — Regenerated `./run`, `./run --nextflow`, and `./run --macro` against current Ferrum (`FERRUM_SRC`); updated `docs/benchmark.md`, README snapshot table, `demo/inputs.json`, `demo/nf_params.json`, and `drs/mapping.json` (Cromwell 54 s, Nextflow 24 s; DRS plain vs Crypt4GH-at-rest medians).
+- **`FERRUM_SRC` alias** — `demo/run.sh` accepts documented `FERRUM_SRC` as well as `FERUM_SRC`; optional `Ferrum-git=` pin when cloning `.cache/ferrum`.
+- **Architecture honesty** — Phase 4 CI is syntax-only; live stack remains local (`./run`).
+- **Benchmark artefacts** — Regenerated `./run`, `./run --nextflow`, and `./run --macro` against current Ferrum (`FERUM_SRC` / `FERRUM_SRC`); updated `docs/benchmark.md`, README snapshot table, `demo/inputs.json`, `demo/nf_params.json`, and `drs/mapping.json` (Cromwell 54 s, Nextflow 24 s; DRS plain vs Crypt4GH-at-rest medians).
 
 ### Fixed
 

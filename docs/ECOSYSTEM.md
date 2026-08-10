@@ -75,7 +75,8 @@ Secondary options (always available): repo `scripts/stack-*.sh`, raw `docker com
 **Benchmark + co-deploy (this repo):**
 
 ```bash
-export FERRUM_SRC=/path/to/Ferrum
+export FERUM_SRC=/path/to/Ferrum
+# or: export FERRUM_SRC=/path/to/Ferrum   # alias accepted by demo/run.sh
 export GA4GH_INFRA_SRC=/path/to/ga4gh-infra
 ./run --with-infra
 ```
