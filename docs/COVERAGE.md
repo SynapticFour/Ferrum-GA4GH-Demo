@@ -3,7 +3,7 @@
 **Date:** 2026-08-10
 **Honesty:** This repo is the **GA4GH genomic benchmark harness** (TRS · DRS · WES · TES + hap.py). It is **not** the portfolio end-to-end trust surface. HELIOS, Solum, consent, evidence packs, and org-IAM live in **SynapticFour-Showcase** (and product repos).
 
-**Pins:** [`PINNED_VERSIONS.txt`](../PINNED_VERSIONS.txt)
+**Pins:** [`PINNED_VERSIONS.txt`](../PINNED_VERSIONS.txt) · Image policy: [`IMAGE-PIN-POLICY.md`](IMAGE-PIN-POLICY.md)
 
 ## What this Demo verifies (tangible)
 
