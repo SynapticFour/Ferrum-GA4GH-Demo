@@ -1,6 +1,10 @@
 # Ferrum GA4GH demonstration & pipeline smoke
 
-Single command to run **[Ferrum](https://github.com/SynapticFour/Ferrum)** **DRS · WES · TES** (plus a **TRS descriptor fetch**) on a **tiny** slice, then **hap.py vs local truth**.
+**Proof / outreach — not a product, not a pilot, not an evaluation kit.** Local laptop smoke of [Ferrum](https://github.com/SynapticFour/Ferrum). Persona: [docs/PERSONA.md](docs/PERSONA.md).
+
+**Stock Ferrum v0.3.0 is not enough for this `./run` path.** `demo/run.sh` rsyncs `vendor/ferrum-overlay/` (WES TES workdir + docker executor) onto the cloned Ferrum tree before build. Treat a green `./run` as proof of the **overlayed** pin, until that overlay is merged upstream.
+
+Single command to run **Ferrum** **DRS · WES · TES** (plus a **TRS descriptor fetch**) on a **tiny** slice, then **hap.py vs local truth**.
 
 **What a successful `./run` proves:** the laptop stack can ingest files via DRS, submit a WES run that TES executes (Cromwell or Nextflow + GATK), and produce a hap.py JSON for **that slice**.
 
@@ -14,7 +18,7 @@ Scope boundary: this demo stays **GA4GH pipeline-smoke-centric** (TRS fetch / DR
 
 ## SynapticFour GA4GH stack
 
-This demo is one of five coordinated repositories. See **[docs/ECOSYSTEM.md](docs/ECOSYSTEM.md)** for roles, ports, and cross-repo quick starts.
+This demo is **proof / outreach**, not one of five products. Portfolio: [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) · [Ferrum PORTFOLIO.md](https://github.com/SynapticFour/Ferrum/blob/main/docs/PORTFOLIO.md).
 
 ## Prerequisites
 
@@ -115,7 +119,7 @@ Details: [docs/benchmark.md](docs/benchmark.md) (reviewer summary after a run).
 | [docs/CLAIMS.md](docs/CLAIMS.md) | Claim vs evidence (what you may cite) |
 | [docs/OUTPUTS.md](docs/OUTPUTS.md) | What `./run` writes under `results/` |
 | [docs/examples/RUN_MANIFEST.example.json](docs/examples/RUN_MANIFEST.example.json) | Manifest schema (no live numbers) |
-| [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) | How this repo fits the five-repo SynapticFour stack |
+| [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) | Portfolio role (proof/outreach, not a product) |
 | [docs/COVERAGE.md](docs/COVERAGE.md) | What Demo proves vs Showcase/HelixTest; smoke targets |
 | [PINNED_VERSIONS.txt](PINNED_VERSIONS.txt) | Ferrum/git + executor image pins |
 | [docs/architecture.md](docs/architecture.md) | Diagram, data plane, overlay, resources |
@@ -148,14 +152,14 @@ Numbers below are a **pipeline smoke**. If the dataset row says synthetic, do no
 | Precision | 0.0 |
 | Recall | 0.0 |
 | F1 | 0.0 |
-| Runtime (demo) | 58 s |
-| WES engine | wdl |
-| DRS stream plain `ref_fasta` (median s) | 0.008944667000000003 |
-| DRS stream Crypt4GH **at-rest** (median s, server decrypt) | 0.006370166999999996 |
+| Runtime (demo) | 51 s |
+| WES engine | nextflow |
+| DRS stream plain `ref_fasta` (median s) | 0.006153832946438342 |
+| DRS stream Crypt4GH **at-rest** (median s, server decrypt) | n/a (`./run --macro` merges this) |
 | DRS stream client header `X-Crypt4GH-Public-Key` (median s) | n/a (set `FERRUM_GA4GH_CRYPT4GH_PUBKEY` for header leg) |
 | DRS micro repetitions (n) | 3 |
 | BAM slice (on disk) | 847 B |
-| WES run | `01M02QS1S433J92KEXBJ213D9N` |
+| WES run | `01M03CB216RJ2R4T2G5N1JX3X3` |
 
 <!-- GA4GH_BENCHMARK_TABLE_END -->
 
