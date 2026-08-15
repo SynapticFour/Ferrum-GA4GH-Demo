@@ -6,7 +6,7 @@ Single command to run **[Ferrum](https://github.com/SynapticFour/Ferrum)** **DRS
 
 **What it does not prove:** GIAB/Platinum genome-wide concordance, clinical validity, GA4GH conformance (that is [HelixTest](https://github.com/SynapticFour/HelixTest)), Africa/field features, or that the Dockstore GATK germline WDL ran (it is fetched, not executed).
 
-After every run, read **`results/RUN_MANIFEST.json`** first. Claim map: [docs/CLAIMS.md](docs/CLAIMS.md). Artefact list: [docs/OUTPUTS.md](docs/OUTPUTS.md).
+After every run, read **`results/RUN_MANIFEST.json`** first. Persona sheet (what ran vs not): [docs/PERSONA.md](docs/PERSONA.md). Claim map: [docs/CLAIMS.md](docs/CLAIMS.md). Artefact list: [docs/OUTPUTS.md](docs/OUTPUTS.md).
 
 Scope boundary: this demo stays **GA4GH pipeline-smoke-centric** (TRS fetch / DRS / WES / TES). MII/KDS validation belongs to upstream Ferrum MII Connect and optional Ferrum-Lab-Kit wrapper workflows.
 
@@ -111,6 +111,7 @@ Details: [docs/benchmark.md](docs/benchmark.md) (reviewer summary after a run).
 
 | File | Role |
 |------|------|
+| [docs/PERSONA.md](docs/PERSONA.md) | Institute persona: what `./run` proved vs not |
 | [docs/CLAIMS.md](docs/CLAIMS.md) | Claim vs evidence (what you may cite) |
 | [docs/OUTPUTS.md](docs/OUTPUTS.md) | What `./run` writes under `results/` |
 | [docs/examples/RUN_MANIFEST.example.json](docs/examples/RUN_MANIFEST.example.json) | Manifest schema (no live numbers) |

@@ -29,6 +29,7 @@ class TestDocsHonesty(unittest.TestCase):
     def test_claims_and_outputs_exist(self):
         self.assertTrue((ROOT / "docs" / "CLAIMS.md").is_file())
         self.assertTrue((ROOT / "docs" / "OUTPUTS.md").is_file())
+        self.assertTrue((ROOT / "docs" / "PERSONA.md").is_file())
         self.assertTrue((ROOT / "NOTICE").is_file())
         self.assertTrue((ROOT / "docs" / "examples" / "RUN_MANIFEST.example.json").is_file())
 

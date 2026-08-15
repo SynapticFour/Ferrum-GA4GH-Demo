@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **`docs/PERSONA.md`** — institute persona sheet (what `./run` proved vs not).
+
 ### Changed
 
 - **Africa ONT ingest** — `ont_metadata` matches Ferrum v0.3.0 (`format: fastq`, required `source_path`); DRS id from `object_id`.
