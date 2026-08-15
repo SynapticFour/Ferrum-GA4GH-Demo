@@ -637,7 +637,7 @@ impl WorkflowExecutor for TesExecutorBackend {
             state: Some("UNKNOWN".to_string()),
             logs: None,
         });
-        let mut state = match task.state.as_deref().unwrap_or("UNKNOWN") {
+        let state = match task.state.as_deref().unwrap_or("UNKNOWN") {
             "QUEUED" => RunState::Queued,
             "INITIALIZING" => RunState::Initializing,
             "RUNNING" => RunState::Running,
