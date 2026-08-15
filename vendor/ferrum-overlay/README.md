@@ -3,10 +3,11 @@
 Rust sources here are **derived from Ferrum** and stay under Ferrum's
 **BUSL-1.1**. See the repository [NOTICE](../../NOTICE).
 
-They exist because stock Ferrum TES defaults to noop until
-`FERRUM_GATEWAY_FEATURES` includes `tes-docker` and WES workdir binds are
-configured. `demo/run.sh` rsyncs this tree onto the **pinned** Ferrum
-checkout before `docker compose build`.
+They exist because this demo still pins Ferrum **v0.3.0**. Two honesty fixes
+now live on Ferrum `main` (no synthetic WES QUEUED/RUNNING delay; residency
+hash uses microsecond Zulu timestamps). `demo/run.sh` still rsyncs this tree
+onto that **pinned** checkout before `docker compose build`. The next Ferrum
+tag retires the overlay.
 
 This overlay **must not**:
 

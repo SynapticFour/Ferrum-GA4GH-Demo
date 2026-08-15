@@ -2,7 +2,7 @@
 
 **Proof / outreach — not a product, not a pilot, not an evaluation kit.** Local laptop smoke of [Ferrum](https://github.com/SynapticFour/Ferrum). Persona: [docs/PERSONA.md](docs/PERSONA.md).
 
-**Stock Ferrum v0.3.0 is not enough for this `./run` path.** `demo/run.sh` rsyncs `vendor/ferrum-overlay/` (WES TES workdir + docker executor) onto the cloned Ferrum tree before build. Treat a green `./run` as proof of the **overlayed** pin, until that overlay is merged upstream.
+**Stock Ferrum v0.3.0 is not enough for this `./run` path.** `demo/run.sh` rsyncs `vendor/ferrum-overlay/` onto the cloned Ferrum tree before build. Ferrum `main` already contains the honest TES poll and residency timestamp fix; this overlay is a **backport onto the v0.3.0 pin**. Treat a green `./run` as proof of the overlayed pin until the next Ferrum tag.
 
 Single command to run **Ferrum** **DRS · WES · TES** (plus a **TRS descriptor fetch**) on a **tiny** slice, then **hap.py vs local truth**.
 
