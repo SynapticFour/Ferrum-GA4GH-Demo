@@ -24,6 +24,7 @@ from typing import Any
 from urllib.request import HTTPCookieProcessor, build_opener
 
 from infra_feature_detect import InfraFeatureSet, _default_urls, detect
+from evidence_contract import scenario_summary
 
 
 def _opener() -> tuple[urllib.request.OpenerDirector, CookieJar]:
@@ -136,6 +137,25 @@ def scenario_service_registry(infra_urls: dict[str, str], fs: InfraFeatureSet) -
         return {"error": str(e)}
 
 
+def _ensure_workspace_viewer(gateway: str, workspace_id: str, sub: str) -> None:
+    """demo-user (injected when require_auth=false) owns demo-workspace-01; add Passport sub."""
+    url = f"{gateway.rstrip('/')}/workspaces/v1/workspaces/{workspace_id}/members"
+    body = json.dumps({"sub": sub, "role": "viewer"}).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=body,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        urllib.request.urlopen(req, timeout=10)
+    except urllib.error.HTTPError as err:
+        # Already a member, or duplicate — GET will still enforce ACL.
+        if err.code not in (200, 201, 409):
+            snippet = err.read()[:300].decode("utf-8", errors="replace")
+            raise RuntimeError(f"add workspace member HTTP {err.code}: {snippet}") from err
+
+
 def scenario_passport_on_drs(
     gateway: str,
     infra_urls: dict[str, str],
@@ -160,23 +180,25 @@ def scenario_passport_on_drs(
                 pass
 
     try:
-        _, passport = broker_login(infra_urls["broker"])
+        subject, passport = broker_login(infra_urls["broker"])
+        _ensure_workspace_viewer(gateway, "demo-workspace-01", subject)
         url = f"{gateway.rstrip('/')}/ga4gh/drs/v1/objects/{object_id}"
         cmd = [
             "curl", "-fsS",
             "-H", f"Authorization: Bearer {passport}",
             url,
         ]
-        result = subprocess.check_output(cmd, text=True, timeout=30)
-        drs_obj = json.loads(result)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            err = (result.stderr or result.stdout or "").strip() or f"exit {result.returncode}"
+            return {"error": f"DRS request with Passport failed: {err[:500]}", "object_id": object_id}
+        drs_obj = json.loads(result.stdout)
         return {
             "ok": True,
             "object_id": object_id,
             "drs_id": drs_obj.get("id", object_id),
-            "note": "GA4GH Passport from broker accepted on Ferrum DRS GET",
+            "note": "GA4GH Passport from broker accepted on Ferrum DRS GET (workspace member)",
         }
-    except subprocess.CalledProcessError as e:
-        return {"error": f"DRS request with Passport failed: {e}"}
     except Exception as e:
         return {"error": str(e)}
 
@@ -242,16 +264,7 @@ def run_all(gateway: str, root: Path, fs: InfraFeatureSet | None = None) -> dict
         status = "SKIPPED" if result.get("skipped") else ("ERROR" if result.get("error") else "OK")
         print(f"[co-deploy] {name}: {status} ({elapsed:.1f}s)", flush=True)
 
-    ran = sum(1 for r in results["scenarios"].values() if not r.get("skipped"))
-    skipped = sum(1 for r in results["scenarios"].values() if r.get("skipped"))
-    errors = sum(1 for r in results["scenarios"].values() if r.get("error"))
-
-    results["summary"] = {
-        "ran": ran,
-        "skipped": skipped,
-        "errors": errors,
-        "all_passed": errors == 0,
-    }
+    results["summary"] = scenario_summary(results["scenarios"])
     return results
 
 

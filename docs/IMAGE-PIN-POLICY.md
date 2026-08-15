@@ -1,20 +1,22 @@
 # Image pin policy
 
-**Status:** 2026-08-12 · org level-up **C10**
+**Status:** 2026-08-15 · org level-up **C10**
 **Repo:** Ferrum-GA4GH-Demo
 
 ## Policy
 
 | Context | Rule |
 |---------|------|
-| **Reproducible benchmark evidence** | Pin Ferrum / ga4gh-infra image versions via env (`FERRUM_IMAGE`, `*_VERSION`) for any run that feeds an Evidence Pack. |
-| **CI / developer laptop** | Defaults may use published tags; avoid silent `:latest` drift between “what we showed” and “what CI ran.” |
-| **Third-party helpers** | Tools such as `nicolaka/netshoot:latest` are **debug-only** — not part of evidence claims. |
+| **Pipeline-smoke evidence you keep** | Pin Ferrum git (`Ferrum-git=`, currently **v0.3.0**), ga4gh-infra git (`GA4GH-INFRA-git=`), and executor tags in `PINNED_VERSIONS.txt`. Village / Pi require `FERRUM_IMAGE` (digest preferred). |
+| **CI / developer laptop** | Syntax CI does not pull Ferrum images. Do not use `:latest` on any path that feeds `results/`. |
+| **Alpha / debug** | `gatk-rs` is not the evidence path. `:latest` is refused unless `FERRUM_GA4GH_ALLOW_LATEST=1`. Tools such as `nicolaka/netshoot:latest` are debug-only. |
 
 ## Current notes
 
-- ga4gh-infra co-deploy compose already defaults infra images to `0.1.0`-class tags via env — keep that pattern.
-- Village scenario `FERRUM_IMAGE` defaults to `ghcr.io/synapticfour/ferrum:latest` — override for published evidence runs.
+- Default clone path is `.cache/stack/Ferrum` (named `Ferrum` so `--with-infra` monorepo `COPY Ferrum/` works).
+- `./run --with-infra` clones ga4gh-infra at `GA4GH-INFRA-git=` (hard-fail if empty unless `FERRUM_GA4GH_ALLOW_UNPINNED=1`) and runs `scripts/prepare-docker-vendor.sh` (`docker/vendor` is gitignored).
+- Village and Pi installers refuse `:latest`.
+- hap.py image is built locally (`ferrum-ga4gh-happy:local`), not pulled from a registry `:latest`.
 
 ## Review
 

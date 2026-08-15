@@ -10,11 +10,13 @@ while IFS= read -r -d '' f; do
   bash -n "$f"
 done < <(find scripts benchmark demo -type f -name '*.sh' -print0 2>/dev/null | sort -z)
 
-python3 -m compileall -q demo/lib scripts
+python3 -m compileall -q demo/lib scripts tests
+python3 -m unittest discover -s tests -t . -p 'test_*.py' -q
 
 bash -n demo/scenarios/village-network/run-village-demo.sh
 bash -n demo/scenarios/raspberry-pi/install-ferrum-edge.sh
-docker compose -f demo/scenarios/village-network/docker-compose.village.yml config >/dev/null
+FERRUM_IMAGE=ghcr.io/synapticfour/ferrum:pin-me \
+  docker compose -f demo/scenarios/village-network/docker-compose.village.yml config >/dev/null
 
 python3 -c "
 from pathlib import Path

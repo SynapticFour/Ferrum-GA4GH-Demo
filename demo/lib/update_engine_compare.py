@@ -31,6 +31,8 @@ def main() -> None:
         "pipeline_elapsed_seconds": m.get("pipeline_elapsed_seconds"),
         "wes_run_id": m.get("wes_run_id"),
         "recorded_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        "caller_uses_truth_alleles": False,
+        "claim_scope": "pipeline_smoke",
     }
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(data, indent=2), encoding="utf-8")

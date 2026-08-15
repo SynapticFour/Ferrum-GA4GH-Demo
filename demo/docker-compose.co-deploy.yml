@@ -9,7 +9,9 @@ services:
         FERRUM_GATEWAY_FEATURES: full,tes-docker,external-auth
     environment:
       FERRUM_AUTH__MODE: external
-      FERRUM_AUTH__ISSUER: http://aai-broker:8080
+      # Broker JWT `iss` is `external_url` in broker.sqlite.toml (host port for login).
+      # JWKS must be the Docker-network URL — 127.0.0.1 inside the gateway is not the broker.
+      FERRUM_AUTH__ISSUER: http://127.0.0.1:8180
       FERRUM_AUTH__JWKS_URL: http://aai-broker:8080/jwks.json
       FERRUM_AUTH__CLEARINGHOUSE: "true"
       FERRUM_SERVICES__ENABLE_PASSPORTS: "false"

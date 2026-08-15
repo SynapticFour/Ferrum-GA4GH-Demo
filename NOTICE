@@ -1,0 +1,29 @@
+Ferrum-GA4GH-Demo
+=================
+
+Except as noted below, this repository is licensed under the Apache License,
+Version 2.0. See LICENSE.
+
+Ferrum overlay
+--------------
+
+Files under vendor/ferrum-overlay/ are derived from Ferrum
+(https://github.com/SynapticFour/Ferrum) and remain licensed under the
+Business Source License 1.1 (BUSL-1.1) of that project. They are not
+Apache-2.0. The demo rsyncs them onto a pinned Ferrum checkout so TES
+Docker + WES workdir binds work on a laptop. Do not redistribute those
+Rust sources under Apache-2.0.
+
+Third-party
+-----------
+
+- GATK / Cromwell / Nextflow container images: Broad Institute / Seqera
+  licences as published with those images.
+- Dockstore TRS descriptors: licences of the upstream workflow
+  repositories. This demo fetches a descriptor for the TRS client path
+  and does not execute that WDL.
+- GIAB / Platinum / 1000 Genomes public data: terms of those projects
+  when the fetch path succeeds (otherwise a synthetic slice is generated
+  and labelled).
+- Crypt4GH demo keypair under demo/fixtures/crypt4gh-node/: generated for
+  local demo only; not a production secret.

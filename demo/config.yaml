@@ -19,13 +19,13 @@ data_sources:
   platinum_na12878_bam: "https://storage.googleapis.com/genomics-public-data/platinum-genomes/bam/NA12878_S1.bam"
   # GIAB HG001 (NA12878) GRCh37 benchmark VCF (full; sliced in fetch script).
   giab_truth_vcf: "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv3.3.2/GRCh37/HG001_GIAB_highconf_IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v3.3.2_highconf.vcf.gz"
-  giab_truth_tbi: "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv3.3.2/GRCH37/HG001_GIAB_highconf_IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v3.3.2_highconf.vcf.gz.tbi"
+  giab_truth_tbi: "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv3.3.2/GRCh37/HG001_GIAB_highconf_IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v3.3.2_highconf.vcf.gz.tbi"
   giab_bed: "https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA12878_HG001/NISTv3.3.2/GRCh37/HG001_GIAB_highconf_IllFB-IllGATKHC-Ion-10X-SOLID_CHROM1-22_v3.3.2_highconf_noinconsistent.bed"
   # 1000 Genomes reference (index downloaded alongside in fetch script).
   ref_fasta_gz: "http://ftp.1000genomes.ebi.ac.uk/vol1/ftp/technical/reference/human_g1k_v37.fasta.gz"
 
 workflow:
-  # Executed WDL (tiny HaplotypeCaller) — Dockstore artifact is still fetched & cached for TRS compliance.
+  # Executed WDL (tiny HaplotypeCaller, caller blind to truth). Dockstore TRS fetch is descriptor-only.
   local_wdl: "workflows/tiny_hc.wdl"
 
 http:

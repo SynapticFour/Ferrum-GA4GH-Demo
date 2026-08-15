@@ -1,23 +1,23 @@
 # Ferrum-GA4GH-Demo coverage map
 
-**Date:** 2026-08-10
-**Honesty:** This repo is the **GA4GH genomic benchmark harness** (TRS · DRS · WES · TES + hap.py). It is **not** the portfolio end-to-end trust surface. HELIOS, Solum, consent, evidence packs, and org-IAM live in **SynapticFour-Showcase** (and product repos).
+**Date:** 2026-08-15
+**Honesty:** This repo is a **GA4GH pipeline smoke** (DRS · WES · TES + hap.py on a tiny slice, plus a TRS **descriptor fetch**). It is **not** a GIAB publication benchmark, not HelixTest conformance, and not a field-hardware proof.
 
-**Pins:** [`PINNED_VERSIONS.txt`](../PINNED_VERSIONS.txt) · Image policy: [`IMAGE-PIN-POLICY.md`](IMAGE-PIN-POLICY.md)
+**Pins:** [`PINNED_VERSIONS.txt`](../PINNED_VERSIONS.txt) (Ferrum **v0.3.0**) · Image policy: [`IMAGE-PIN-POLICY.md`](IMAGE-PIN-POLICY.md)
 
 ## What this Demo verifies (tangible)
 
 | Layer | How | Command | Evidence |
 |-------|-----|---------|----------|
-| TRS → local workflow cache | Dockstore fetch | `./run` | `workflows/cached/`, `results/wes_request.json` |
+| TRS descriptor fetch (not executed) | Dockstore GET | `./run` | `results/trs_fetch.json` (`executed: false`) |
 | DRS ingest + `/stream` | Pipeline inputs | `./run` | `drs/mapping.json`, `results/drs_micro.json` → `plain` |
-| WES → TES → GATK (WDL) | Cromwell | `./run` (default) | `results/query.vcf.gz`, `metrics.json` |
+| WES → TES → GATK (WDL) | Cromwell | `./run` (default) | `results/query.vcf.gz`, `metrics.json`, `RUN_MANIFEST.json` |
 | WES → TES → GATK (Nextflow) | Nextflow | `./run --nextflow` | same + `engine_compare.json` when both run |
 | hap.py vs truth | Docker hap.py | every successful `./run` | `results/benchmark.json` (precision/recall/F1) |
 | Crypt4GH at-rest DRS micro | dual ingest | `./run --macro` | `drs_micro.json` → `crypt4gh_at_rest` |
 | Crypt4GH client header (optional) | pubkey env | `./run --crypt4gh` | `drs_micro.json` → `crypt4gh` |
-| Africa feature probes | detect + scenarios | after `./run` / `--africa` | `results/africa_results.json` (`all_passed`) |
-| ga4gh-infra co-deploy | Passport / registry | `./run --with-infra` | `results/co_deploy_results.json` |
+| Africa feature probes | detect + scenarios | after `./run` / `--africa` | `results/africa_results.json` (`summary.verdict`; skip is not a pass) |
+| ga4gh-infra co-deploy | Passport / registry | `./run --with-infra` | `results/co_deploy_results.json` (broker `iss` + workspace member) |
 | gatk-rs Alpha WES | soft-skip | `./run --gatk-rs` | `results/gatk_rs_wes_result.json` |
 | Village Network / Pi edge | manual scripts | see README | not part of main `results/` contract |
 
@@ -37,10 +37,10 @@
 
 | Workflow | What |
 |----------|------|
-| `ci.yml` | Shell syntax, Python compile, Africa/co-deploy import checks, village compose config |
+| `ci.yml` | Shell syntax, Python compile, **unittest**, Africa/co-deploy import checks, village compose config |
 | CodeQL / secret-scan / dependency-review | Security |
 
-**No Docker stack / no `./run` in default CI** (cold Ferrum build is too heavy). Live proof is local: `make smoke-evidence` after `./run`.
+**No Docker stack / no `./run` in default CI.** Live proof is local: `make smoke-evidence` after `./run`. Read `results/RUN_MANIFEST.json`.
 
 ## Smoke targets
 

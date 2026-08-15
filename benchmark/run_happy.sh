@@ -2,7 +2,7 @@
 # hap.py vs GIAB truth (image built from benchmark/Dockerfile.happy).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-IMAGE="${HAPPY_IMAGE:-ferrum-ga4gh-happy:latest}"
+IMAGE="${HAPPY_IMAGE:-ferrum-ga4gh-happy:local}"
 # Image is linux/amd64 (Bioconda); required on arm64 hosts.
 HAPPY_PLATFORM="${HAPPY_PLATFORM:-linux/amd64}"
 TRUTH="${TRUTH_VCF:-$ROOT/data/truth_slice.vcf.gz}"
@@ -41,12 +41,13 @@ if [[ ! -f "$SUMMARY" ]]; then
 fi
 [[ -f "$SUMMARY" ]] || { echo "missing hap.py output (expected $ROOT/results/happy.metrics.json.gz)" >&2; exit 1; }
 
-python3 - "$SUMMARY" "$JSON_OUT" <<'PY'
+python3 - "$SUMMARY" "$JSON_OUT" "$ROOT" <<'PY'
 import gzip, json, math, sys
 from pathlib import Path
 
 src = Path(sys.argv[1])
 out_json = Path(sys.argv[2])
+root = Path(sys.argv[3]).resolve()
 
 if str(src).endswith(".gz"):
     data = json.loads(gzip.open(src, "rt").read())
@@ -95,11 +96,20 @@ p, r, f = num(precision), num(recall), num(f1)
 if f is None and p is not None and r is not None:
     f = 0.0 if (p + r) == 0 else 2 * p * r / (p + r)
 
+try:
+    summary_source = str(src.resolve().relative_to(root))
+except ValueError:
+    summary_source = src.name
+
+synthetic = (root / "data" / "synthetic_manifest.txt").is_file()
 out = {
     "precision": p,
     "recall": r,
     "f1_score": f,
-    "summary_source": str(src),
+    "summary_source": summary_source,
+    "caller_uses_truth_alleles": False,
+    "dataset_kind": "synthetic_giab_style" if synthetic else "public_giab_platinum_slice",
+    "claim_scope": "pipeline_smoke",
 }
 out_json.write_text(json.dumps(out, indent=2))
 print(out_json.read_text())

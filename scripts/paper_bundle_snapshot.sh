@@ -16,6 +16,8 @@ for f in \
   phase2_pass_crypt4gh.json \
   benchmark.phase2_plain.json \
   benchmark.phase2_crypt4gh.json \
+  RUN_MANIFEST.json \
+  trs_fetch.json \
   wes_request.json \
   interval.txt \
   drs_mapping_phase_plain.json; do

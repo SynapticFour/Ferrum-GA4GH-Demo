@@ -4,7 +4,7 @@
 # Usage: via ./run --africa (never applied by default)
 #
 # These environment variables are IGNORED by stock Ferrum (no Africa features).
-# They activate only when Ferrum upstream has implemented the Africa Cursor Prompts.
+# Overlay env vars are ignored by stock Ferrum until those features exist upstream.
 services:
   ferrum-gateway:
     environment:

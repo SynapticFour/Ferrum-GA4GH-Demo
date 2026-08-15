@@ -1,1 +1,3 @@
+# PRs that touch vendor/ or workflows/ need a second human reader when one exists.
+# Org token is not a substitute for review of TES overlay or caller WDL.
 * @SynapticFour

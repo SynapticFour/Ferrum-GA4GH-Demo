@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-15T00:00:00Z",
+  "ferrum_git_pin": "see PINNED_VERSIONS.txt Ferrum-git=",
+  "what_this_run_is": "Local GA4GH *pipeline smoke*: DRS ingest + WES→TES + nested GATK + hap.py on a tiny slice.",
+  "what_this_run_is_not": [
+    "A GIAB / Platinum publication-grade variant-calling benchmark",
+    "Clinical or regulatory validation",
+    "Proof that the Dockstore GATK germline WDL was executed (TRS fetch is descriptor-only)",
+    "GA4GH conformance (that is HelixTest)",
+    "A two-node Raspberry Pi / rural-WiFi field deployment",
+    "Africa/field feature proof unless africa.verdict is passed and scenarios ran"
+  ],
+  "dataset": {
+    "kind": "synthetic_giab_style",
+    "interval": "22:1700-2300",
+    "bam_bytes": null,
+    "bam_human": null,
+    "synthetic_manifest": true
+  },
+  "caller": {
+    "uses_truth_alleles": false,
+    "workflow": "http://host.docker.internal:<port>/tiny_hc.wdl",
+    "engine": "wdl",
+    "wes_run_id": "<WES run id from this ./run>"
+  },
+  "hap_py": {
+    "precision": null,
+    "recall": null,
+    "f1_score": null,
+    "claim_scope": "pipeline_smoke",
+    "caller_uses_truth_alleles": false,
+    "cite": true,
+    "note": "cite=true only when caller_uses_truth_alleles=false. Still not a GIAB publication result."
+  },
+  "trs": {
+    "descriptor_fetched": true,
+    "descriptor_executed_as_wes": false,
+    "executed": false
+  },
+  "africa": {
+    "verdict": "not_evaluated",
+    "all_passed": false,
+    "ran": 0,
+    "skipped": 0,
+    "errors": 0
+  },
+  "co_deploy": {
+    "verdict": "not_evaluated",
+    "all_passed": false,
+    "ran": 0,
+    "skipped": 0,
+    "errors": 0
+  },
+  "overlay": {
+    "applied": true,
+    "note": "TES/WES workdir overlay (BUSL-1.1). WES poll_status reports TES state as-is."
+  },
+  "security_demo_only": [
+    "Gateway mounts docker.sock (laptop TES, not a production posture).",
+    "Crypt4GH node.sec is a committed non-production fixture.",
+    "Static HTTP serves workflows/ only."
+  ]
+}

@@ -25,15 +25,16 @@ Usage: ./run [options]
   --wdl            Run WDL/Cromwell path via WES→TES (default).
   --nextflow       Run Nextflow (same GATK logic as tiny_hc.wdl).
   --gatk-rs        Optional Alpha: Nextflow + gatk-rs caller (workflows/tiny_hc_gatk_rs.nf).
-                   Soft-skips if image missing (default FERRUM_GA4GH_GATK_RS_SOFT=1). Not the default GIAB path.
+                   Not the evidence path. Pin FERRUM_GA4GH_GATK_RS_IMAGE (no :latest unless
+                   FERRUM_GA4GH_ALLOW_LATEST=1). Soft-skips if image missing/unpinned.
   --macro          Phase 2: plain + Crypt4GH-at-rest ingests (two WES+hap passes); merges DRS micro into
                    results/drs_micro.json (plain ref_fasta vs at-rest ref_fasta server decrypt). See docs/benchmark.md.
   --crypt4gh       With FERRUM_GA4GH_CRYPT4GH_PUBKEY: adds X-Crypt4GH-Public-Key leg to drs_micro (PEM→one-line base64).
   --plain          Default DRS stream path (implicit).
   --giab-full      Not implemented — see docs/architecture.md (resource planning).
   --no-reset       Keep docker compose volumes (FERRUM_GA4GH_RESET_VOLUMES=0). Risky if DB schema drifts; see README.
-  --africa         Apply Africa resilience overlay (activates Africa features
-                   if present in Ferrum upstream; otherwise has no effect)
+  --africa         Apply Africa overlay; run scenarios only for probed capabilities.
+                   Skip-only is not_evaluated (not a pass).
   --with-infra     Co-deploy ga4gh-infra (broker, visa-registry, service-registry,
                    ADS on ports 8180–8190, 9100) and wire Ferrum external auth +
                    service-registry discovery. See docs/architecture.md.
@@ -44,12 +45,14 @@ Details: docs/architecture.md
 Environment (also used by demo/run.sh):
   FERRUM_GA4GH_ENGINE   wdl | nextflow (set by --wdl / --nextflow / --gatk-rs)
   FERRUM_GA4GH_CALLER   gatk (default) | gatk-rs (set by --gatk-rs)
-  FERRUM_GA4GH_GATK_RS_IMAGE  docker image for gatk-rs NF (default gatkr/gatk-rs:latest)
-  FERRUM_GA4GH_GATK_RS_SOFT   1 (default) = soft-skip if image missing / optional path fails early
+  FERRUM_GA4GH_GATK_RS_IMAGE  pinned gatk-rs image (no default :latest; see PINNED_VERSIONS.txt)
+  FERRUM_GA4GH_GATK_RS_SOFT   1 (default) = soft-skip if image missing / unpinned
+  FERRUM_GA4GH_ALLOW_LATEST   1 = allow :latest on the Alpha gatk-rs path only
   FERRUM_GA4GH_MACRO_COMPARE  set to 1 by --macro (Phase 2 A/B)
   FERRUM_GA4GH_ENCRYPT_INGEST  1 = single run with encrypt=true ingest (requires node keys mount)
   FERRUM_GA4GH_CRYPT4GH_PUBKEY  optional PEM/node.pub for optional drs_micro "crypt4gh" header timing (see docs/benchmark.md)
-  GATEWAY_PORT, FERUM_SRC (or alias FERRUM_SRC), COMPOSE_PROJECT_NAME, FERRUM_GA4GH_RESET_VOLUMES, FERRUM_TES_DOCKER_PLATFORM,
+  GATEWAY_PORT, FERRUM_SRC (deprecated alias FERUM_SRC), FERRUM_GA4GH_ALLOW_UNPINNED,
+  COMPOSE_PROJECT_NAME, FERRUM_GA4GH_RESET_VOLUMES, FERRUM_TES_DOCKER_PLATFORM,
   FERRUM_GA4GH_WES_HOST_OVERRIDE (optional absolute WES bind on Docker host), …
 EOF
 }

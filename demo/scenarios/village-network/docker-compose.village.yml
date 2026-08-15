@@ -1,12 +1,11 @@
-# Village Network simulation: two Ferrum nodes, no internet, federated Beacon.
-# Node A: Kisumu Lab (Kenya) — holds Plasmodium falciparum data
-# Node B: Nouna Lab (Burkina Faso) — holds Mycobacterium tuberculosis data
-# Demonstrates: federated Beacon P2P, data sovereignty, GA4GH compliance
-# Hardware equivalent: two Raspberry Pi 5s connected by WiFi
+# Two Ferrum containers on one Docker network (labels: Kisumu / Nouna).
+# Laptop simulation only — not Raspberry Pi hardware, not rural WiFi, not a conformance run.
+# Stock Ferrum ignores FERRUM_AFRICA__* / FERRUM_FEDERATION__* until those features exist upstream.
+# Pin FERRUM_IMAGE to a digest for any evidence you keep.
 
 services:
   ferrum-kisumu:
-    image: "${FERRUM_IMAGE:-ghcr.io/synapticfour/ferrum:latest}"
+    image: "${FERRUM_IMAGE:-ghcr.io/synapticfour/ferrum:pin-me}"
     environment:
       FERRUM_AFRICA__OFFLINE_FIRST: "true"
       FERRUM_AFRICA__MAX_MEMORY_MB: "1024"
@@ -23,7 +22,7 @@ services:
       - village-net
 
   ferrum-nouna:
-    image: "${FERRUM_IMAGE:-ghcr.io/synapticfour/ferrum:latest}"
+    image: "${FERRUM_IMAGE:-ghcr.io/synapticfour/ferrum:pin-me}"
     environment:
       FERRUM_AFRICA__OFFLINE_FIRST: "true"
       FERRUM_AFRICA__MAX_MEMORY_MB: "1024"
@@ -39,20 +38,6 @@ services:
     networks:
       - village-net
 
-  # Network simulator: throttle to 1 Mbit/s between nodes (rural WiFi equivalent)
-  # Uses Linux tc netem via a traffic-shaping sidecar
-  network-shaper:
-    image: "nicolaka/netshoot:latest"
-    command: >
-      sh -c "tc qdisc add dev eth0 root netem rate 1mbit delay 200ms 50ms &&
-             echo 'Network shaped to 1Mbit/s, 200ms latency' &&
-             sleep infinity"
-    cap_add: [NET_ADMIN]
-    networks:
-      - village-net
-
 networks:
   village-net:
     driver: bridge
-    # Intentionally isolated from host network — simulates offline village
-    internal: true

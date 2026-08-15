@@ -1,0 +1,18 @@
+{
+  "claim_withdrawn": true,
+  "reason": "hap.py F1=1.0 while HaplotypeCaller received --alleles truth on a tiny (including synthetic) slice",
+  "caller_uses_truth_alleles": true,
+  "claim_scope": "withdrawn_forced_alleles_pipeline_timing_only",
+  "may_cite": [
+    "pipeline wall times",
+    "DRS /stream loopback medians",
+    "dataset byte sizes"
+  ],
+  "must_not_cite": [
+    "precision",
+    "recall",
+    "f1_score",
+    "GIAB / Platinum concordance"
+  ],
+  "note": "Keep this folder as a timing artefact. Re-run ./run on current main for a blind-caller smoke. See REPRODUCIBILITY.md."
+}

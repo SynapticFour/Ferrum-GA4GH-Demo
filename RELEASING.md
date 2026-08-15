@@ -1,23 +1,16 @@
 # Releasing
 
-This repository follows Semantic Versioning (`MAJOR.MINOR.PATCH`).
+This repository has **no Git tags yet**. Version a demo run by:
 
-## Release process
+- git SHA of this repo
+- `Ferrum-git=` in [PINNED_VERSIONS.txt](PINNED_VERSIONS.txt)
+- `results/RUN_MANIFEST.json` from that run
 
-1. Ensure CI is green on `main`.
-2. Update `CHANGELOG.md` with user-visible changes.
-3. Create an annotated tag:
-   - `git tag -a vX.Y.Z -m "vX.Y.Z"`
-4. Push the tag:
-   - `git push origin vX.Y.Z`
-5. Verify GitHub release artifacts and notes.
+When you cut the first release:
 
-## Versioning rules
+1. CI green on `main` (`unittest` included).
+2. `CHANGELOG.md` updated.
+3. Annotated tag `vX.Y.Z` and `git push origin vX.Y.Z`.
+4. Do not call hap.py F1 a GIAB publication result in release notes.
 
-- `MAJOR`: breaking API/behavior changes
-- `MINOR`: backward-compatible features
-- `PATCH`: backward-compatible fixes and maintenance
-
-## Backport policy
-
-Security fixes should be backported to actively maintained release lines where feasible.
+Until then, ignore Semantic Versioning language in older copies of this file.

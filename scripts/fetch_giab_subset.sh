@@ -19,6 +19,12 @@ GIAB_BED="https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/NA128
 
 echo "[fetch] Writing subset under $DATA"
 
+if [[ -f "$DATA/synthetic_manifest.txt" ]]; then
+  echo "[fetch] data/synthetic_manifest.txt present — existing slices are synthetic, not GIAB/Platinum."
+  echo "[fetch] Remove that file and the slice BAM/VCF/FASTA to attempt a public fetch."
+  exit 0
+fi
+
 if [[ ! -s "$DATA/na12878_slice.bam.bai" ]]; then
   echo "[fetch] Subsetting Platinum NA12878 BAM..."
   docker run --rm --user "$(id -u):$(id -g)" -v "$DATA:/work" "$SAMTOOLS_IMAGE" \

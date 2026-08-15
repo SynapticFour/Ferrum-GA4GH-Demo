@@ -8,9 +8,9 @@ Each scenario function:
 - Must NEVER raise an exception that propagates — catch and return {"error": str(e)}
 - Must be idempotent (safe to re-run)
 
-Scenarios are designed as proofs-of-concept demonstrations, not full benchmarks.
-They demonstrate that Africa features work end-to-end, analogous to how the
-main demo demonstrates GA4GH compliance.
+Scenarios are probes, not a field-hardware proof and not GA4GH conformance.
+Skip-only runs are ``not_evaluated`` (not a pass). An invalid residency chain
+is a failure. The main demo is a DRS·WES·TES pipeline smoke, not HelixTest.
 """
 from __future__ import annotations
 
@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any
 
 from africa_feature_detect import AfricaFeatureSet, detect
+from evidence_contract import beacon_has_pathogen_filter_terms, residency_ok, scenario_summary
 
 
 def scenario_offline_mode(gateway: str, root: Path, fs: AfricaFeatureSet) -> dict:
@@ -69,7 +70,8 @@ def scenario_ont_ingestion(gateway: str, root: Path, fs: AfricaFeatureSet) -> di
 
     try:
         ont_metadata = json.dumps({
-            "format": "Fastq",
+            "format": "fastq",
+            "source_path": str(stub_path),
             "run_id": "africa_demo_run_001",
             "sample_id": "synthetic_pf_sample",
             "organism": "Plasmodium_falciparum",
@@ -88,12 +90,19 @@ def scenario_ont_ingestion(gateway: str, root: Path, fs: AfricaFeatureSet) -> di
             "-F", f"ont_metadata={ont_metadata}",
             f"{gateway}/api/v1/ingest/ont"
         ]
-        result = subprocess.check_output(cmd, text=True, timeout=30)
-        ingest_response = json.loads(result)
-        drs_id = ingest_response.get("id")
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+        if result.returncode != 0:
+            err = (result.stderr or result.stdout or "").strip() or f"exit {result.returncode}"
+            return {"error": f"ONT ingest HTTP/curl failed: {err[:500]}"}
+        ingest_response = json.loads(result.stdout)
+        drs_id = (
+            ingest_response.get("object_id")
+            or ingest_response.get("drs_object_id")
+            or ingest_response.get("id")
+        )
 
         if not drs_id:
-            return {"error": f"No DRS ID in ONT ingest response: {result}"}
+            return {"error": f"No DRS ID in ONT ingest response: {result.stdout[:500]}"}
 
         req = urllib.request.Request(f"{gateway}/ga4gh/drs/v1/objects/{drs_id}")
         with urllib.request.urlopen(req, timeout=10) as resp:
@@ -125,20 +134,9 @@ def scenario_ont_ingestion(gateway: str, root: Path, fs: AfricaFeatureSet) -> di
             "note": "Synthetic ONT FASTQ ingested; DRS object confirmed with metadata",
         }
     except subprocess.CalledProcessError as e:
-        return {"error": f"curl failed: {e.stderr}"}
+        return {"error": f"curl failed: {e}"}
     except Exception as e:
         return {"error": str(e)}
-
-
-def _has_pathogen_filter_terms(info: dict) -> bool:
-    terms = info.get("filteringTerms") or []
-    if isinstance(terms, dict):
-        terms = terms.get("filteringTerms") or []
-    return any(
-        (t.get("id") or "").lower() == "pathogenfilter"
-        for t in terms
-        if isinstance(t, dict)
-    )
 
 
 def scenario_multi_pathogen_beacon(gateway: str, root: Path, fs: AfricaFeatureSet) -> dict:
@@ -150,7 +148,7 @@ def scenario_multi_pathogen_beacon(gateway: str, root: Path, fs: AfricaFeatureSe
         with urllib.request.urlopen(req, timeout=10) as resp:
             info = json.loads(resp.read())
 
-        if not _has_pathogen_filter_terms(info):
+        if not beacon_has_pathogen_filter_terms(info):
             return {
                 "skipped": True,
                 "reason": "Beacon /info has no PathoGenFilter filteringTerms",
@@ -210,7 +208,16 @@ def scenario_outbreak_mode(gateway: str, root: Path, fs: AfricaFeatureSet) -> di
                 return {
                     "skipped": True,
                     "reason": "outbreak_mode endpoint exists but no demo policy configured",
-                    "hint": "Add [outbreak.policies] demo_outbreak_policy to ferrum config"
+                    "hint": "Add [outbreak.policies] demo_outbreak_policy to ferrum config",
+                }
+            if e.code in (401, 403):
+                return {
+                    "skipped": True,
+                    "reason": (
+                        "outbreak activate requires ferrum:outbreak_activator (or admin) "
+                        "Passport visa; laptop demo-user JWT has neither"
+                    ),
+                    "http_status": e.code,
                 }
             raise
 
@@ -279,14 +286,27 @@ def scenario_residency_audit(gateway: str, root: Path, fs: AfricaFeatureSet) -> 
         ]
         data_stayed = all(not e.get("data_left_node", True) for e in beacon_entries)
 
+        chain_valid = verify.get("chain_valid")
+        if not residency_ok(chain_valid):
+            return {
+                "error": (
+                    f"residency audit endpoint responded but chain_valid={chain_valid!r}; "
+                    "not recorded as verified"
+                ),
+                "chain_valid": chain_valid,
+                "entry_count": verify.get("entry_count"),
+                "event_type_summary": event_types,
+                "beacon_queries_data_stayed": data_stayed,
+            }
+
         return {
             "ok": True,
-            "chain_valid": verify.get("chain_valid"),
+            "chain_valid": chain_valid,
             "entry_count": verify.get("entry_count"),
             "last_hash": verify.get("last_hash", "")[:16] + "...",
             "event_type_summary": event_types,
             "beacon_queries_data_stayed": data_stayed,
-            "note": "Cryptographic audit chain verified. All beacon queries confirmed data_left_node=false.",
+            "note": "Audit verify returned chain_valid=true.",
         }
     except Exception as e:
         return {"error": str(e)}
@@ -362,16 +382,7 @@ def run_all(gateway: str, root: Path, fs: AfricaFeatureSet) -> dict:
         status = "SKIPPED" if result.get("skipped") else ("ERROR" if result.get("error") else "OK")
         print(f"[africa] {name}: {status} ({elapsed:.1f}s)", flush=True)
 
-    ran = sum(1 for r in results["scenarios"].values() if not r.get("skipped"))
-    skipped = sum(1 for r in results["scenarios"].values() if r.get("skipped"))
-    errors = sum(1 for r in results["scenarios"].values() if r.get("error"))
-
-    results["summary"] = {
-        "ran": ran,
-        "skipped": skipped,
-        "errors": errors,
-        "all_passed": errors == 0,
-    }
+    results["summary"] = scenario_summary(results["scenarios"])
 
     return results
 

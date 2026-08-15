@@ -77,7 +77,7 @@ lines.append(f"- **Branch:** `{sh(['git', 'rev-parse', '--abbrev-ref', 'HEAD'])}
 
 lines.append("\n## Upstream Ferrum (clone)\n")
 if (ferrum / ".git").is_dir():
-    lines.append("- **Path:** `.cache/ferrum`\n")
+    lines.append("- **Path:** `.cache/stack/Ferrum`\n")
     lines.append(
         f"- **Commit:** `{subprocess.check_output(['git', '-C', str(ferrum), 'rev-parse', 'HEAD'], text=True).strip()}`\n"
     )
@@ -117,7 +117,17 @@ lines.append(
 lines.append(
     "- **DRS micro (`drs_micro.json`):** after macro, keys **`plain`** (cleartext `ref_fasta`), "
     "**`crypt4gh_at_rest`** (encrypted `ref_fasta`, gateway decrypt on `/stream`), optional **`crypt4gh`** "
-    "(client header timing). See [docs/benchmark.md](docs/benchmark.md#publication-friendly-summary).\n"
+    "(client header timing). See [docs/benchmark.md](docs/benchmark.md) reviewer summary.\n"
+)
+)
+
+lines.append("\n## Claim scope\n")
+lines.append(
+    "- This bundle is a **pipeline smoke** (DRS · WES · TES + hap.py on a tiny slice).\n"
+    "- Concordance is **withdrawn** unless `benchmark.json` records "
+    "`caller_uses_truth_alleles: false` and `claim_withdrawn` is absent.\n"
+    "- Attach `RUN_MANIFEST.json` (copied into this folder when present). "
+    "See [docs/CLAIMS.md](../../CLAIMS.md).\n"
 )
 
 lines.append("\n## Paper JSON snapshot\n")

@@ -1,7 +1,8 @@
 version 1.0
 
 # Minimal single-sample HaplotypeCaller WDL executed by Cromwell (TES) + GATK Docker.
-# Dockstore TRS still caches the broader gatk4-germline-snps-indels bundle separately (see scripts).
+# Pipeline smoke — not a GIAB publication benchmark. Caller does not see the truth VCF.
+# Dockstore TRS fetch (scripts/fetch_dockstore_trs.sh) is descriptor-only; this WDL is what WES runs.
 
 workflow TinyGermlineHC {
   input {
@@ -52,14 +53,14 @@ task HaplotypeCaller {
     ln -s ~{truth_vcf} truth.vcf.gz
     ln -s ~{truth_vcf_index} truth.vcf.gz.tbi
     gatk CreateSequenceDictionary -R ref_local.fa -O ref_local.dict
+    # Caller is blind to the truth VCF. Truth is localized via DRS only to prove
+    # VCF ingest/stream; hap.py on the host is the comparison. Do not pass --alleles.
     gatk --java-options "-Xmx3g" HaplotypeCaller \
       -R ref_local.fa \
       -I input_local.bam \
       -O output.vcf.gz \
       -L ~{interval} \
-      --alleles truth.vcf.gz \
-      --standard-min-confidence-threshold-for-calling 10.0 \
-      --minimum-mapping-quality 0
+      --standard-min-confidence-threshold-for-calling 10.0
   >>>
 
   output {

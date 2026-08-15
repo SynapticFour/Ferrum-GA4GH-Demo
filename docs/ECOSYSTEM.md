@@ -2,7 +2,7 @@
 
 Five repositories implement a coherent on-premises GA4GH platform. This file is **mirrored** in each repo so readers can navigate between projects without relearning structure.
 
-**You are here:** [Ferrum-GA4GH-Demo](https://github.com/SynapticFour/Ferrum-GA4GH-Demo) — reproducible GA4GH benchmark and co-deploy scenarios.
+**You are here:** [Ferrum-GA4GH-Demo](https://github.com/SynapticFour/Ferrum-GA4GH-Demo) — GA4GH pipeline smoke (`./run`) and optional co-deploy scenarios. Not a GIAB publication benchmark.
 
 ## Repositories
 
@@ -21,7 +21,7 @@ Five repositories implement a coherent on-premises GA4GH platform. This file is 
 | Identity | **ga4gh-infra** | Broker, visas, DUO, ADS, service registry |
 | Data/compute | **Ferrum** | DRS, WES/TES, TRS, Beacon; built-in passports in standalone mode |
 | Deployment | **Ferrum-Lab-Kit** | Selective GA4GH surfaces for labs; does not fork Ferrum |
-| Demo/benchmark | **Ferrum-GA4GH-Demo** | Reproducible GIAB benchmark; optional `--with-infra` |
+| Demo / pipeline smoke | **Ferrum-GA4GH-Demo** | Tiny-slice DRS·WES·TES + hap.py; optional `--with-infra` |
 | Conformance | **HelixTest** | Automated API and workflow tests |
 
 This demo **composes** Ferrum and ga4gh-infra via Docker Compose overlays; it does not implement GA4GH APIs itself. See [docs/architecture.md](architecture.md).
@@ -75,8 +75,10 @@ Secondary options (always available): repo `scripts/stack-*.sh`, raw `docker com
 **Benchmark + co-deploy (this repo):**
 
 ```bash
-export FERUM_SRC=/path/to/Ferrum
-# or: export FERRUM_SRC=/path/to/Ferrum   # alias accepted by demo/run.sh
+# Defaults: .cache/stack/Ferrum and .cache/stack/ga4gh-infra (siblings).
+# Or point at existing checkouts:
+export FERRUM_SRC=/path/to/Ferrum
+# deprecated alias: FERUM_SRC
 export GA4GH_INFRA_SRC=/path/to/ga4gh-infra
 ./run --with-infra
 ```

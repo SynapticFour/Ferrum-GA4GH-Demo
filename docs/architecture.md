@@ -1,6 +1,6 @@
 # Architecture
 
-Technical reference for this demo. **Operator entry:** [README](../README.md) (`./run`, env vars). **Last metrics:** [benchmark.md](./benchmark.md) (auto-generated).
+Technical reference for this demo. **Operator entry:** [README](../README.md) (`./run`, env vars). **Last metrics:** [benchmark.md](./benchmark.md) (auto-generated after `./run`; pipeline smoke, not a GIAB paper).
 
 ## Demo scope (phases)
 
@@ -79,22 +79,23 @@ Crypt4GH: DRS micro (macro) = plaintext stream vs at-rest ciphertext + **server 
 | `crypt4gh` | Optional: same plain URL with `X-Crypt4GH-Public-Key` (PEM file is reduced to **one-line base64** in `scripts/drs_micro_benchmark.py`). |
 | `encrypted_object_id` | DRS id of the at-rest `ref_fasta` leg (paired with plain id from `results/drs_mapping_phase_plain.json`). |
 
-Single `./run` (no `--macro`): only the **current** ingest’s `ref_fasta` is timed under `plain`; `crypt4gh_at_rest` is absent unless you pass `--encrypted-object-id` manually. Full reviewer-facing tables: [benchmark.md → Publication-friendly summary](./benchmark.md#publication-friendly-summary).
+Single `./run` (no `--macro`): only the **current** ingest’s `ref_fasta` is timed under `plain`; `crypt4gh_at_rest` is absent unless you pass `--encrypted-object-id` manually. Full reviewer-facing tables: [benchmark.md](./benchmark.md) after `./run`.
 
-Extra clone path: `FERUM_SRC` / alias `FERRUM_SRC` (default `.cache/ferrum`) — second checkout only if you build separately. See [PINNED_VERSIONS.txt](../PINNED_VERSIONS.txt).
+Extra clone path: **`FERRUM_SRC`** (deprecated alias `FERUM_SRC`, default `.cache/stack/Ferrum`). Pin is required. See [PINNED_VERSIONS.txt](../PINNED_VERSIONS.txt).
 
 ## Patch overlay (demo)
 
-`vendor/ferrum-overlay/` is rsync’d onto `.cache/ferrum` before `docker compose build`. It is intentionally small:
+`vendor/ferrum-overlay/` is rsync’d onto the **pinned** Ferrum checkout (v0.3.0) before `docker compose build`. Overlay Rust is **BUSL-1.1** (NOTICE). Pin checkout failure is a hard error unless `FERRUM_GA4GH_ALLOW_UNPINNED=1`. `ferrum-gateway` `Cargo.toml` / `main.rs` are **not** rsynced (those overlay copies would strip features).
 
-- **`ferrum-gateway` `main.rs`** — reads **`FERRUM_TES_BACKEND`** / **`FERRUM_TES_WORK_DIR`** (stock binary still defaults to noop TES until this lands upstream).
-- **`ferrum-wes` `executors/tes.rs`** — thin delta on upstream: per-run **`workdir`** when **`FERRUM_WES_TES_WORK_HOST_PREFIX`** + bash/file launch modes are on; pinned Cromwell / Nextflow images; multi-line `nextflow.config` for NF 24+.
+- **`ferrum-wes` `executors/tes.rs`** — Ferrum v0.3.0 workdir/log persistence; **no** synthetic HelixTest QUEUED/RUNNING delay; pinned Cromwell / Nextflow images.
+- **`ferrum-tes` `executors/docker.rs`** — docker executor + bind policy (stock TES is noop without `tes-docker`).
+- **`ferrum-core` `residency.rs`** — hash audit timestamps as **microsecond Zulu** so Postgres `timestamptz` round-trips keep `chain_valid` true. Stock v0.3.0 `to_rfc3339()` (nanos / `+00:00` vs `Z`) makes verify return false.
 
-Everything else (Docker TES executor, compose **`FERRUM_GATEWAY_FEATURES=tes-docker`**, **`FERRUM_TES_DOCKER_*`**, **`FERRUM_WES_TES_*`**) follows [Ferrum](https://github.com/SynapticFour/Ferrum) as documented. Conformance runner: [HelixTest](https://github.com/SynapticFour/HelixTest). Deployment / lab on-ramp: [Ferrum-Lab-Kit](https://github.com/SynapticFour/Ferrum-Lab-Kit).
+Compose **`FERRUM_GATEWAY_FEATURES=tes-docker`**, **`FERRUM_TES_DOCKER_*`**, **`FERRUM_WES_TES_*`** follow [Ferrum](https://github.com/SynapticFour/Ferrum). Conformance: [HelixTest](https://github.com/SynapticFour/HelixTest). Lab on-ramp: [Ferrum-Lab-Kit](https://github.com/SynapticFour/Ferrum-Lab-Kit).
 
 ## Village Network simulation (field / edge)
 
-Two Ferrum gateways on an **internal Docker network** simulate two village labs (Kisumu + Nouna) with **federated Beacon** and a **netem sidecar** (1 Mbit/s, ~200 ms latency). Host ports **18081** / **18082** expose each node for curl and `demo/lib/africa_scenarios.py` ingest.
+Two Ferrum **containers** on one laptop (labels Kisumu + Nouna). This is **not** two Raspberry Pis, **not** rural WiFi (there is no netem on the Ferrum path), and **not** a conformance run. `FERRUM_IMAGE` must be a pin; `:latest` is refused. `FERRUM_AFRICA__*` / `FERRUM_FEDERATION__*` are ignored by stock Ferrum until those features exist. The village script writes `ga4gh_compliant: false`.
 
 | Path | Role |
 |------|------|
@@ -103,7 +104,7 @@ Two Ferrum gateways on an **internal Docker network** simulate two village labs 
 | `demo/lib/africa_scenarios.py` | Synthetic ONT/pathogen ingest per node |
 | `demo/lib/africa_feature_detect.py` | Probe gateway for Africa/federation flags |
 
-**Simulation-first, then hardware:** validate federation and residency flows on a laptop before shipping Raspberry Pi kits. Physical install: `demo/scenarios/raspberry-pi/install-ferrum-edge.sh` (standalone) or Ferrum-Lab-Kit [`install-edge.sh`](https://github.com/SynapticFour/Ferrum-Lab-Kit/blob/main/install-edge.sh) (`field-edge` profile + compose merge). `FERRUM_AFRICA__*` and `FERRUM_FEDERATION__*` env vars are **ignored by stock Ferrum** until Africa Cursor Prompts land upstream.
+**Simulation-first, then hardware:** the compose file is a laptop stand-in. Physical install: `install-ferrum-edge.sh` with a **pinned** `FERRUM_IMAGE` (no curl|bash).
 
 ```mermaid
 flowchart LR
@@ -118,7 +119,7 @@ flowchart LR
   H -->|18082| N
 ```
 
-`demo/run.sh` runs **`git checkout`** on paths we no longer overlay so stale patches in `.cache/ferrum` are dropped. DRS is **not** patched.
+`demo/run.sh` runs **`git checkout`** on paths we no longer overlay so stale patches in `.cache/stack/Ferrum` are dropped. DRS `repo.rs` is **not** patched.
 
 **Host vs container paths:** `demo/run.sh` sets **`FERUM_WES_WORK_HOST`** to **`$REPO/results/wes-work`** (absolute), passed into compose as **`FERRUM_WES_TES_WORK_HOST_PREFIX`**. Custom bind: **`FERRUM_GA4GH_WES_HOST_OVERRIDE`** (absolute path on the Docker host).
 
@@ -173,20 +174,28 @@ does not clash with Ferrum’s gateway (**18080** by default).
 → optional `demo/docker-compose.africa.yml`.
 
 **Ferrum env (co-deploy overlay):** `FERRUM_AUTH__MODE=external`,
-`FERRUM_AUTH__ISSUER` / `FERRUM_AUTH__JWKS_URL` point at `aai-broker:8080`,
-`FERRUM_SERVICES__ENABLE_PASSPORTS=false`, `FERRUM_DISCOVERY__ENABLED=true`,
-`FERRUM_DISCOVERY__AUTO_REGISTER=true`. Built-in ferrum-passports are disabled;
-Passports are validated via ga4gh-clearinghouse against the broker JWKS.
+`FERRUM_AUTH__ISSUER=http://127.0.0.1:8180` (must match broker JWT `iss` /
+`external_url` in `broker.sqlite.toml`), `FERRUM_AUTH__JWKS_URL=http://aai-broker:8080/jwks.json`
+(Docker-network fetch from the gateway), `FERRUM_SERVICES__ENABLE_PASSPORTS=false`,
+`FERRUM_DISCOVERY__ENABLED=true`, `FERRUM_DISCOVERY__AUTO_REGISTER=true`.
+`aai-broker` needs `REGISTRY_BOOTSTRAP_API_KEY` (ga4gh-infra v0.2.2 fail-closes without it).
+Built-in ferrum-passports are disabled; Passports are validated via ga4gh-clearinghouse
+against the broker JWKS. `test-object-1` is workspace-private: the co-deploy scenario
+adds the mock-idp subject as a `demo-workspace-01` viewer before the Bearer DRS GET.
 
-**Clone layout:** `demo/run.sh` clones **ga4gh-infra** to `.cache/ga4gh-infra`
-(sibling of `.cache/ferrum`) so Ferrum’s path dependency on `ga4gh-clearinghouse`
-resolves during `docker compose build`. Override with `GA4GH_INFRA_SRC`.
+**Clone layout:** default `FERRUM_SRC=$ROOT/.cache/stack/Ferrum` and
+`GA4GH_INFRA_SRC=$ROOT/.cache/stack/ga4gh-infra` (siblings) so the monorepo
+`Dockerfile.gateway-monorepo` context (`COPY Ferrum/` + `COPY ga4gh-infra/`) works.
+`--with-infra` runs ga4gh-infra `scripts/prepare-docker-vendor.sh` (`docker/vendor` is
+gitignored; Dockerfiles `COPY` it). Override with `GA4GH_INFRA_SRC`.
 
-After the main benchmark, co-deploy scenarios run when infra is detected.
-Results: `results/co_deploy_results.json`, merged into `results/metrics.json`.
+Co-deploy scenarios run **before** the WES pipeline when infra is detected (auth/registry
+must not wait on hap.py). Failures are recorded and the pipeline still writes artefacts;
+the process exits 1 at the end. Results: `results/co_deploy_results.json`.
 
 **Invariant:** `./run` (without `--with-infra`) is unchanged. Co-deploy scenarios
-are skipped with `all_passed: true` when infra is absent.
+are skipped with `summary.verdict: not_evaluated` and `all_passed: false` when
+infra is absent. Skip is not a pass.
 
 ```mermaid
 flowchart LR

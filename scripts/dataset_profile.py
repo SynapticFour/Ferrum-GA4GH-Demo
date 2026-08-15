@@ -53,7 +53,7 @@ def main() -> None:
         "files": files,
         "ingest_total_bytes": total,
         "ingest_total_human": human(total) if total else "0 B",
-        "note": "Sizes are local files before DRS ingest; BAM is the slice used by HaplotypeCaller.",
+        "note": "Sizes are local files before DRS ingest. Synthetic subset is a pipeline smoke, not a GIAB publication dataset.",
     }
     out_path = root / "results" / "dataset_profile.json"
     out_path.parent.mkdir(parents=True, exist_ok=True)

@@ -2,5 +2,8 @@
   "precision": 1.0,
   "recall": 1.0,
   "f1_score": 1.0,
-  "summary_source": "/Users/alexandersenf/devel/SynapticFour/Ferrum-GA4GH-Demo/results/happy.metrics.json.gz"
+  "summary_source": "results/happy.metrics.json.gz",
+  "claim_withdrawn": true,
+  "caller_uses_truth_alleles": true,
+  "claim_scope": "withdrawn_forced_alleles_pipeline_timing_only"
 }

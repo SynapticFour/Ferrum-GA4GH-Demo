@@ -1,3 +1,6 @@
+//! SPDX-License-Identifier: BUSL-1.1
+//! Derived from Ferrum v0.3.0 (https://github.com/SynapticFour/Ferrum). Not Apache-2.0.
+//!
 //! Docker executor via bollard.
 //! GA4GH demo: volume binds from the task (WES symmetric workdir), docker.sock, static docker CLI,
 //! compose network mode, and explicit executor entrypoint/cmd (Cromwell / Nextflow).
@@ -6,9 +9,13 @@ use crate::error::{Result, TesError};
 use crate::executor::TaskExecutor;
 use crate::types::{CreateTaskRequest, TaskState};
 use async_trait::async_trait;
-use bollard::container::{Config, CreateContainerOptions, StartContainerOptions};
+use bollard::container::{
+    Config, CreateContainerOptions, LogOutput, LogsOptions, StartContainerOptions,
+};
+use bollard::image::CreateImageOptions;
 use bollard::models::{ContainerStateStatusEnum, HostConfig};
 use bollard::Docker;
+use futures_util::StreamExt;
 
 pub struct DockerExecutor {
     docker: Docker,
@@ -24,10 +31,51 @@ impl DockerExecutor {
         Ok(Self::new(docker))
     }
 
-    fn collect_binds(request: &CreateTaskRequest) -> Vec<String> {
+    fn split_image_ref(image: &str) -> (String, String) {
+        let image = image.trim();
+        if let Some((name, tag)) = image.rsplit_once(':') {
+            if !tag.contains('/') {
+                return (name.to_string(), tag.to_string());
+            }
+        }
+        (image.to_string(), "latest".to_string())
+    }
+
+    async fn ensure_image(&self, image: &str) -> Result<()> {
+        let platform = std::env::var("FERRUM_TES_DOCKER_PLATFORM")
+            .ok()
+            .map(|s| s.trim().to_string())
+            .filter(|s| !s.is_empty());
+        if platform.is_none() && self.docker.inspect_image(image).await.is_ok() {
+            return Ok(());
+        }
+        let (from_image, tag) = Self::split_image_ref(image);
+        tracing::info!(image = %image, ?platform, "TES Docker: pulling image");
+        let mut stream = self.docker.create_image(
+            Some(CreateImageOptions {
+                from_image: from_image.as_str(),
+                tag: tag.as_str(),
+                platform: platform.as_deref().unwrap_or(""),
+                ..Default::default()
+            }),
+            None,
+            None,
+        );
+        while let Some(item) = stream.next().await {
+            item.map_err(|e| TesError::Executor(format!("docker pull {image}: {e}")))?;
+        }
+        Ok(())
+    }
+
+    fn collect_binds(request: &CreateTaskRequest) -> Result<Vec<String>> {
         let mut binds = Vec::new();
         if std::env::var("FERRUM_TES_DOCKER_MOUNT_SOCKET")
-            .map(|s| s == "1")
+            .map(|s| {
+                matches!(
+                    s.trim().to_ascii_lowercase().as_str(),
+                    "1" | "true" | "yes" | "on"
+                )
+            })
             .unwrap_or(false)
         {
             binds.push("/var/run/docker.sock:/var/run/docker.sock".to_string());
@@ -51,25 +99,19 @@ impl DockerExecutor {
             }
         }
         if let Some(vols) = &request.volumes {
-            for v in vols {
-                if let Some(s) = v.as_str() {
-                    binds.push(s.to_string());
-                    continue;
-                }
-                if let (Some(h), Some(c)) = (
-                    v.get("hostPath").and_then(|x| x.as_str()),
-                    v.get("containerPath").and_then(|x| x.as_str()),
-                ) {
-                    binds.push(format!("{}:{}", h, c));
-                }
-            }
+            binds.extend(crate::bind_policy::request_volume_binds(
+                vols,
+                &crate::bind_policy::allowed_bind_prefixes(),
+            )?);
         }
-        binds
+        Ok(binds)
     }
 
     /// Prefer explicit TES executor entrypoint/cmd (WES bash/file modes). Fall back to the
     /// flattened `sh -lc script` shape for older callers.
-    fn entrypoint_and_cmd(exec: &crate::types::TesExecutor) -> (Option<Vec<String>>, Option<Vec<String>>) {
+    fn entrypoint_and_cmd(
+        exec: &crate::types::TesExecutor,
+    ) -> (Option<Vec<String>>, Option<Vec<String>>) {
         if let Some(ep) = &exec.entrypoint {
             let cmd = if exec.command.is_empty() {
                 None
@@ -79,10 +121,7 @@ impl DockerExecutor {
             return (Some(ep.clone()), cmd);
         }
         let shell_bin = exec.command.first().map(|s| s.as_str());
-        let is_shell = matches!(
-            shell_bin,
-            Some("sh" | "bash" | "/bin/sh" | "/bin/bash")
-        );
+        let is_shell = matches!(shell_bin, Some("sh" | "bash" | "/bin/sh" | "/bin/bash"));
         if exec.command.len() == 3
             && is_shell
             && (exec.command[1] == "-lc" || exec.command[1] == "-c")
@@ -98,6 +137,30 @@ impl DockerExecutor {
             (None, Some(exec.command.clone()))
         }
     }
+
+    async fn fetch_container_logs(&self, id: &str) -> Result<(String, String)> {
+        let opts = Some(LogsOptions::<String> {
+            stdout: true,
+            stderr: true,
+            tail: "all".to_string(),
+            ..Default::default()
+        });
+        let mut stdout = String::new();
+        let mut stderr = String::new();
+        let mut stream = self.docker.logs(id, opts);
+        while let Some(chunk) = stream.next().await {
+            match chunk.map_err(|e| TesError::Executor(e.to_string()))? {
+                LogOutput::StdOut { message } | LogOutput::Console { message } => {
+                    stdout.push_str(&String::from_utf8_lossy(&message));
+                }
+                LogOutput::StdErr { message } => {
+                    stderr.push_str(&String::from_utf8_lossy(&message));
+                }
+                LogOutput::StdIn { .. } => {}
+            }
+        }
+        Ok((stdout, stderr))
+    }
 }
 
 #[async_trait]
@@ -111,8 +174,9 @@ impl TaskExecutor for DockerExecutor {
             return Err(TesError::Validation("executors required".into()));
         }
         let exec = &request.executors[0];
+        self.ensure_image(&exec.image).await?;
         let name = format!("tes-{}", task_id);
-        let binds = Self::collect_binds(request);
+        let binds = Self::collect_binds(request)?;
         let (entrypoint, cmd) = Self::entrypoint_and_cmd(exec);
         let network_mode = std::env::var("FERRUM_TES_DOCKER_NETWORK_MODE")
             .or_else(|_| std::env::var("FERRUM_TES_DOCKER_NETWORK"))
@@ -128,11 +192,7 @@ impl TaskExecutor for DockerExecutor {
             })
             .filter(|v| !v.is_empty());
         let host_config = HostConfig {
-            binds: if binds.is_empty() {
-                None
-            } else {
-                Some(binds)
-            },
+            binds: if binds.is_empty() { None } else { Some(binds) },
             network_mode,
             extra_hosts,
             ..Default::default()
@@ -200,5 +260,16 @@ impl TaskExecutor for DockerExecutor {
             }
             _ => Ok(TaskState::Unknown),
         }
+    }
+
+    async fn fetch_logs(
+        &self,
+        _task_id: &str,
+        external_id: Option<&str>,
+    ) -> Result<Option<(String, String)>> {
+        let Some(id) = external_id else {
+            return Ok(None);
+        };
+        Ok(Some(self.fetch_container_logs(id).await?))
     }
 }

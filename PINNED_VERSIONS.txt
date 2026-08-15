@@ -1,21 +1,28 @@
 # Ferrum-GA4GH-Demo pins — what this harness builds / clones against.
 # Refresh when cutting a coordinated stack release (see Ferrum VERSIONS.lock).
 
-# Preferred sibling override (either spelling works — see demo/run.sh):
-#   export FERUM_SRC=/path/to/Ferrum
-#   export FERRUM_SRC=/path/to/Ferrum   # alias
+# Canonical sibling override:
+#   export FERRUM_SRC=/path/to/Ferrum
+# Default clone path is .cache/stack/Ferrum (named Ferrum so --with-infra monorepo build works).
+# Deprecated alias (typo in early docs): FERUM_SRC
 
-# When cloning into .cache/ferrum, checkout this SHA if set (empty = tip of default branch).
-# Keep in sync with a known-good Ferrum main commit used for paper/demo evidence.
-Ferrum-git=a4b54f83a05ad20edf9e4aa5fc452a132d83182b
+# Required unless FERRUM_GA4GH_ALLOW_UNPINNED=1. Empty pin = demo refuses to clone.
+# Ferrum v0.3.0 tag (commit, not the annotated tag object).
+Ferrum-git=6444469ac488af9dd6f62f584b99be87ff2d7180
 
-# Optional infra sibling for ./run --with-infra
-# GA4GH-INFRA-git=  (empty = tip; prefer tag ga4gh-infra-v0.1.0 when locking)
+# Required for ./run --with-infra clone unless FERRUM_GA4GH_ALLOW_UNPINNED=1.
+# Matches Ferrum VERSIONS.lock GA4GH_INFRA_SHA (tag ga4gh-infra-v0.2.2).
+GA4GH-INFRA-git=e43bf08bce5132db697a28c7db898d5e18f87b3f
 
 # Executor images (demo overlay; see vendor/ferrum-overlay and compose)
 Cromwell-image=broadinstitute/cromwell:93-0232cbd
 Nextflow-tag=24.10.3
 GATK-image=broadinstitute/gatk:4.4.0.0
 
-# Soft Alpha path
-gatk-rs-image=gatkr/gatk-rs:latest
+# Optional Alpha path — not evidence-grade. Empty until you pin a digest.
+# :latest is refused unless FERRUM_GA4GH_ALLOW_LATEST=1.
+gatk-rs-image=
+
+# Static docker CLI (scripts/ensure_docker_cli_static.sh). Leave empty to trust
+# download.docker.com SHA256SUMS only; set to pin against a known hash.
+# Docker-cli-sha256-x86_64=

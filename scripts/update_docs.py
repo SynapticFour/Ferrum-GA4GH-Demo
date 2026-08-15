@@ -8,6 +8,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 
+def _hap_withdrawn(bench: dict) -> bool:
+    """True when hap.py numbers must not be cited (forced alleles or pre-honesty JSON)."""
+    if bench.get("claim_withdrawn"):
+        return True
+    alleles = bench.get("caller_uses_truth_alleles")
+    return alleles is not False
+
+
+def _hap_cell(bench: dict, key: str) -> str:
+    if _hap_withdrawn(bench):
+        return "*withdrawn — do not cite (forced alleles or pre-honesty artefact)*"
+    val = bench.get(key)
+    return "n/a" if val is None else str(val)
+
+
 def _load_json(path: Path) -> dict | None:
     if not path.is_file():
         return None
@@ -23,7 +38,7 @@ def generate_africa_section(root: Path) -> str:
     features = africa.get("detected_features") or {}
 
     def _status(key: str) -> str:
-        return "✅ Available" if features.get(key) else "⬜ Not in this build"
+        return "detected (probe only — see africa_results.json)" if features.get(key) else "not detected"
 
     rows = [
         ("Offline Mode (SQLite)", "offline_mode"),
@@ -44,8 +59,8 @@ def generate_africa_section(root: Path) -> str:
         lines.append(f"| {label} | {_status(key)} |\n")
     lines.append("<!-- AFRICA_FEATURES_END -->\n\n")
     lines.append(
-        "*Africa features are additive. EU/GA4GH compliance is unaffected by their presence or absence.*\n"
-        "*Full scenario results: `results/africa_results.json`*\n"
+        "*Probes are not a pass. `results/africa_results.json` `summary.verdict` is the contract "
+        "(`passed` / `failed` / `not_evaluated`). Skip-only is not a pass.*\n"
     )
     return "".join(lines)
 
@@ -57,7 +72,7 @@ def _publication_block(
     dataset_line: str,
 ) -> str:
     """Cromwell vs Nextflow table, dataset sizes, DRS n for reviewers."""
-    lines: list[str] = ["\n## Publication-friendly summary\n\n"]
+    lines: list[str] = ["\n## Reviewer summary (pipeline smoke)\n\n"]
 
     # DRS micro: explicit n
     repeat_n = dm.get("repeat_n")
@@ -146,10 +161,17 @@ def _publication_block(
             f"(or see table above: *{dataset_line}*).\n\n"
         )
 
-    # Engine comparison
+    # Engine comparison — omit timings from pre-honesty (--alleles) runs.
+    def _honest_engine(row: dict) -> dict:
+        if not isinstance(row, dict) or not row:
+            return {}
+        if row.get("caller_uses_truth_alleles") is not False:
+            return {}
+        return row
+
     ec = _load_json(root / "results" / "engine_compare.json") or {}
-    cw = ec.get("cromwell_wdl") or {}
-    nf = ec.get("nextflow") or {}
+    cw = _honest_engine(ec.get("cromwell_wdl") or {})
+    nf = _honest_engine(ec.get("nextflow") or {})
     lines.append(
         "**Cromwell vs Nextflow** (same `tiny_hc` logic, same DRS objects, same interval):\n\n"
     )
@@ -199,11 +221,11 @@ def main() -> None:
         else "chr22 (see results/interval.txt)"
     )
     if (root / "data" / "synthetic_manifest.txt").is_file():
-        dataset = f"Synthetic GIAB-style subset ({interval})"
+        dataset = f"Synthetic GIAB-style subset ({interval}) — pipeline smoke, not a GIAB publication benchmark"
     else:
         dataset = (
             "NA12878 Platinum slice + GIAB HG001 truth (GRCh37), "
-            f"{interval}"
+            f"{interval} — tiny window pipeline smoke, not a genome-wide GIAB paper result"
         )
 
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -212,8 +234,10 @@ def main() -> None:
         sp = Path(str(summary_src))
         if sp.is_absolute():
             summary_src = str(sp.relative_to(root.resolve()))
+        else:
+            summary_src = str(sp)
     except (ValueError, OSError):
-        pass
+        summary_src = Path(str(summary_src)).name
 
     dm = metrics.get("drs_micro") or {}
     plain_w = (dm.get("plain") or {}).get("wall_seconds") or {}
@@ -263,8 +287,11 @@ def main() -> None:
                 h.get("f1_score"),
             )
 
-        pp, pr, pf = _hp(pl)
-        cp, cr_r, cf = _hp(cr)
+        if _hap_withdrawn(bench):
+            pp = pr = pf = cp = cr_r = cf = "*withdrawn*"
+        else:
+            pp, pr, pf = _hp(pl)
+            cp, cr_r, cf = _hp(cr)
         eng = (pl.get("wes_engine") or "wdl").strip().lower()
         if eng == "nextflow":
             eng_line = (
@@ -287,9 +314,35 @@ def main() -> None:
 Artefacts: `results/benchmark.phase2_plain.json`, `results/benchmark.phase2_crypt4gh.json`, `results/phase2_pass_*.json`, `results/drs_mapping_phase_plain.json` (plain-phase DRS ids), **`results/drs_micro.json`** (merged **after** both passes: `plain` + `crypt4gh_at_rest` + optional `crypt4gh`).
 """
 
+    withdrawn_banner = (
+        "> **Claim scope: pipeline smoke.** hap.py numbers are for this slice only — "
+        "not a GIAB publication result. Read `docs/CLAIMS.md` and `results/RUN_MANIFEST.json`.\n\n"
+    )
+    if _hap_withdrawn(bench):
+        withdrawn_banner += (
+            "> **Withdrawn hap.py concordance.** This artefact does not record "
+            "`caller_uses_truth_alleles: false` (or is explicitly `claim_withdrawn`). "
+            "Do not cite Precision/Recall/F1. Re-run `./run` on this tree (blind caller).\n\n"
+        )
+    alleles_cell = (
+        "unknown (treat as withdrawn)"
+        if bench.get("caller_uses_truth_alleles") is None
+        else ("yes — withdrawn" if bench.get("caller_uses_truth_alleles") else "no")
+    )
+    f1_note = ""
+    if (
+        not _hap_withdrawn(bench)
+        and (root / "data" / "synthetic_manifest.txt").is_file()
+        and (bench.get("f1_score") in (0, 0.0) or bench.get("precision") in (0, 0.0))
+    ):
+        f1_note = (
+            "\n*F1/precision 0 on a tiny synthetic slice with a **blind** caller is expected "
+            "(GATK may emit no variants). That is not a Ferrum product failure.*\n"
+        )
+
     bench_md = f"""# Benchmark (hap.py)
 
-Auto-generated by `demo/run.sh` — **do not hand-edit** (regenerated on each pipeline run).
+{withdrawn_banner}Auto-generated by `demo/run.sh` — **do not hand-edit** (regenerated on each pipeline run).
 
 | Field | Value |
 |-------|-------|
@@ -299,19 +352,22 @@ Auto-generated by `demo/run.sh` — **do not hand-edit** (regenerated on each pi
 | WES run id | `{metrics.get("wes_run_id", "n/a")}` |
 | DRS /stream plain median (s, ref_fasta) | {plain_med if plain_med is not None else "n/a"} |
 | DRS micro repetitions (n) | {drs_n} |
-{at_rest_line}{crypt_line}| Precision | {bench.get("precision")} |
-| Recall | {bench.get("recall")} |
-| F1 | {bench.get("f1_score")} |
+{at_rest_line}{crypt_line}| Precision | {_hap_cell(bench, "precision")} |
+| Recall | {_hap_cell(bench, "recall")} |
+| F1 | {_hap_cell(bench, "f1_score")} |
+| Caller uses truth `--alleles` | {alleles_cell} |
+| Claim scope | {bench.get("claim_scope") or "pipeline_smoke"} |
 | Input dataset | {dataset} |
 | hap.py metrics | `{summary_src}` |
-
+{f1_note}
 ## GA4GH components exercised
 
-1. **TRS** — Dockstore `ga4gh/trs/v2` descriptor cached under `workflows/cached/`.
+1. **TRS (descriptor fetch only)** — Dockstore `ga4gh/trs/v2` JSON is cached under `workflows/cached/` and recorded in `results/trs_fetch.json` with `executed: false`. WES runs in-repo `tiny_hc.wdl` / `tiny_hc.nf`, not the Dockstore GATK germline WDL.
 2. **DRS** — Files ingested via `POST /ga4gh/drs/v1/ingest/file`; the workflow engine localizes `GET .../objects/{{id}}/stream` (Cromwell or Nextflow; raw bytes on the compose network).
 3. **WES** — `POST /ga4gh/wes/v1/runs` (WDL or Nextflow + params).
-4. **TES** — Ferrum routes WES to `POST /ga4gh/tes/v1/tasks` (Docker backend: Cromwell + nested GATK, or Nextflow with Docker enabled + nested GATK).
-5. **DRS micro** — `scripts/drs_micro_benchmark.py` times `GET .../objects/{{id}}/stream` (**n = {drs_n}** runs per mode by default). **`./run --macro`:** after plain + encrypted ingests, one merged `drs_micro.json` with **`plain`** and **`crypt4gh_at_rest`** (and **`crypt4gh`** if `FERRUM_GA4GH_CRYPT4GH_PUBKEY` is set). See tables under *Publication-friendly summary* and `results/drs_micro.json`.
+4. **TES** — Ferrum routes WES to `POST /ga4gh/tes/v1/tasks` (Docker backend: Cromwell + nested GATK, or Nextflow with Docker enabled + nested GATK). Requires the demo TES overlay; see NOTICE.
+5. **DRS micro** — `scripts/drs_micro_benchmark.py` times `GET .../objects/{{id}}/stream` (**n = {drs_n}** runs per mode by default). Loopback/compose timing, not a WAN benchmark. **`./run --macro`:** after plain + encrypted ingests, one merged `drs_micro.json` with **`plain`** and **`crypt4gh_at_rest`** (and **`crypt4gh`** if `FERRUM_GA4GH_CRYPT4GH_PUBKEY` is set).
+6. **hap.py** — concordance on **this slice only**. Caller does **not** receive `--alleles` truth. Read `results/RUN_MANIFEST.json` before citing numbers.
 {_publication_block(root, metrics, dm, dataset)}
 {phase2_md}
 {generate_africa_section(root)}
@@ -333,9 +389,12 @@ Auto-generated by `demo/run.sh` — **do not hand-edit** (regenerated on each pi
     )
     table = f"""| Metric | Value |
 |--------|-------|
-| Precision | {bench.get("precision")} |
-| Recall | {bench.get("recall")} |
-| F1 | {bench.get("f1_score")} |
+| Claim scope | Pipeline smoke — not a GIAB publication result |
+| Dataset | {dataset} |
+| Caller uses truth `--alleles` | {alleles_cell} |
+| Precision | {_hap_cell(bench, "precision")} |
+| Recall | {_hap_cell(bench, "recall")} |
+| F1 | {_hap_cell(bench, "f1_score")} |
 | Runtime (demo) | {metrics.get("pipeline_elapsed_seconds", "n/a")} s |
 | WES engine | {engine} |
 | DRS stream plain `ref_fasta` (median s) | {plain_med if plain_med is not None else "n/a"} |

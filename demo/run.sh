@@ -38,7 +38,9 @@ export STATIC_PORT="${STATIC_PORT:-$(pick_free_port)}"
 GATEWAY="http://127.0.0.1:${GATEWAY_PORT}"
 export FERRUM_GA4GH_ENGINE="${FERRUM_GA4GH_ENGINE:-wdl}"
 export FERRUM_GA4GH_CALLER="${FERRUM_GA4GH_CALLER:-gatk}"
-export FERRUM_GA4GH_GATK_RS_IMAGE="${FERRUM_GA4GH_GATK_RS_IMAGE:-gatkr/gatk-rs:latest}"
+_gatk_rs_pin="$(awk -F= '/^gatk-rs-image=/{print $2; exit}' "$ROOT/PINNED_VERSIONS.txt" 2>/dev/null || true)"
+_gatk_rs_pin="${_gatk_rs_pin// /}"
+export FERRUM_GA4GH_GATK_RS_IMAGE="${FERRUM_GA4GH_GATK_RS_IMAGE:-${_gatk_rs_pin:-}}"
 export FERRUM_GA4GH_GATK_RS_SOFT="${FERRUM_GA4GH_GATK_RS_SOFT:-1}"
 
 TS_START="$(date +%s)"
@@ -48,8 +50,41 @@ command -v docker >/dev/null || { echo "docker required" >&2; exit 1; }
 command -v python3 >/dev/null || { echo "python3 required" >&2; exit 1; }
 command -v curl >/dev/null || { echo "curl required (for static docker CLI in TES/Cromwell)" >&2; exit 1; }
 
-# Optional Alpha path: soft-skip before stack build if gatk-rs image is unavailable.
+# Optional Alpha path: not the evidence default. Refuse :latest / empty image unless overridden.
 if [[ "${FERRUM_GA4GH_CALLER}" == "gatk-rs" ]]; then
+  _gatk_rs_refuse=0
+  case "${FERRUM_GA4GH_GATK_RS_IMAGE}" in
+    ""|*:latest|*:latest-arm64|*:latest-amd64) _gatk_rs_refuse=1 ;;
+  esac
+  if [[ "$_gatk_rs_refuse" == "1" && "${FERRUM_GA4GH_ALLOW_LATEST:-0}" != "1" ]]; then
+    echo "[demo] gatk-rs is Alpha and not the evidence path. Pin FERRUM_GA4GH_GATK_RS_IMAGE (digest/tag, not :latest) or set FERRUM_GA4GH_ALLOW_LATEST=1 for a throwaway lab." >&2
+    python3 - <<PY
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+root = Path("$ROOT")
+out = {
+  "schema_version": 1,
+  "stage": "gatk_rs_wes",
+  "generated_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+  "status": "skipped",
+  "reason": "image_unpinned",
+  "image": "${FERRUM_GA4GH_GATK_RS_IMAGE}",
+  "soft": True,
+  "honesty": (
+    "Optional gatk-rs WES path skipped: image empty or :latest. "
+    "Default Broad GATK path is unchanged. Not evidence-grade."
+  ),
+}
+(root / "results").mkdir(parents=True, exist_ok=True)
+(root / "results" / "gatk_rs_wes_result.json").write_text(json.dumps(out, indent=2) + "\\n", encoding="utf-8")
+print(json.dumps({"ok": True, "skipped": True, "reason": "image_unpinned"}))
+PY
+    if [[ "${FERRUM_GA4GH_GATK_RS_SOFT}" == "1" ]]; then
+      exit 0
+    fi
+    exit 3
+  fi
   echo "[demo] caller=gatk-rs image=${FERRUM_GA4GH_GATK_RS_IMAGE} (optional Alpha; default remains Broad GATK)"
   docker pull "${FERRUM_GA4GH_GATK_RS_IMAGE}" >/dev/null 2>&1 || true
   if ! docker image inspect "${FERRUM_GA4GH_GATK_RS_IMAGE}" >/dev/null 2>&1; then
@@ -92,36 +127,80 @@ DOCKER_CLI_HOST="$ROOT/.cache/docker-cli-static/docker"
 export FERRUM_TES_DOCKER_MOUNT_SOCKET=1
 export FERRUM_TES_DOCKER_CLI_HOST_PATH="$DOCKER_CLI_HOST"
 
-# Prefer FERUM_SRC; accept documented alias FERRUM_SRC.
-FERUM_SRC="${FERUM_SRC:-${FERRUM_SRC:-$ROOT/.cache/ferrum}}"
-if [[ ! -d "$FERUM_SRC/.git" ]]; then
-  echo "[demo] cloning Ferrum into $FERUM_SRC ..."
-  mkdir -p "$(dirname "$FERUM_SRC")"
-  git clone --depth 1 https://github.com/SynapticFour/Ferrum.git "$FERUM_SRC"
-  # Optional pin from PINNED_VERSIONS.txt (Ferrum-git=…)
-  _pin="$(awk -F= '/^Ferrum-git=/{print $2; exit}' "$ROOT/PINNED_VERSIONS.txt" 2>/dev/null || true)"
-  if [[ -n "${_pin// /}" ]]; then
-    echo "[demo] checking out pinned Ferrum-git=${_pin}"
-    git -C "$FERUM_SRC" fetch --depth 1 origin "$_pin" 2>/dev/null \
-      && git -C "$FERUM_SRC" checkout "$_pin" \
-      || echo "[demo] warn: could not checkout pin $_pin — using clone tip"
+# Prefer FERRUM_SRC; keep FERUM_SRC as a deprecated alias (typo in early docs).
+FERRUM_SRC="${FERRUM_SRC:-${FERUM_SRC:-$ROOT/.cache/stack/Ferrum}}"
+FERUM_SRC="$FERRUM_SRC"
+export FERRUM_SRC FERUM_SRC
+_pin="$(awk -F= '/^Ferrum-git=/{print $2; exit}' "$ROOT/PINNED_VERSIONS.txt" 2>/dev/null || true)"
+_pin="${_pin// /}"
+_allow_unpin="${FERRUM_GA4GH_ALLOW_UNPINNED:-0}"
+if [[ ! -d "$FERRUM_SRC/.git" ]]; then
+  echo "[demo] cloning Ferrum into $FERRUM_SRC ..."
+  mkdir -p "$(dirname "$FERRUM_SRC")"
+  if [[ -z "$_pin" ]]; then
+    echo "[demo] PINNED_VERSIONS.txt has empty Ferrum-git= — set a SHA or FERRUM_GA4GH_ALLOW_UNPINNED=1" >&2
+    exit 3
+  fi
+  git clone https://github.com/SynapticFour/Ferrum.git "$FERRUM_SRC"
+  echo "[demo] checking out pinned Ferrum-git=${_pin}"
+  git -C "$FERRUM_SRC" fetch --depth 1 origin "$_pin"
+  git -C "$FERRUM_SRC" checkout --detach "$_pin"
+else
+  _have="$(git -C "$FERRUM_SRC" rev-parse HEAD)"
+  if [[ -n "$_pin" && "$_have" != "$_pin" ]]; then
+    echo "[demo] Ferrum at $FERRUM_SRC is $_have, pin is $_pin" >&2
+    if [[ "$_allow_unpin" != "1" ]]; then
+      echo "[demo] refusing unpinned Ferrum (set FERRUM_GA4GH_ALLOW_UNPINNED=1 to override)" >&2
+      exit 3
+    fi
+    echo "[demo] warn: continuing unpinned because FERRUM_GA4GH_ALLOW_UNPINNED=1"
   fi
 fi
-echo "[demo] Ferrum sources: $FERUM_SRC ($(git -C "$FERUM_SRC" rev-parse --short HEAD 2>/dev/null || echo unknown))"
+echo "[demo] Ferrum sources: $FERRUM_SRC ($(git -C "$FERRUM_SRC" rev-parse --short HEAD 2>/dev/null || echo unknown))"
 
-GA4GH_INFRA_SRC="${GA4GH_INFRA_SRC:-$(dirname "$FERUM_SRC")/ga4gh-infra}"
+GA4GH_INFRA_SRC="${GA4GH_INFRA_SRC:-$(dirname "$FERRUM_SRC")/ga4gh-infra}"
 if [[ "${FERRUM_GA4GH_WITH_INFRA:-0}" == "1" ]]; then
+  _infra_pin="$(awk -F= '/^GA4GH-INFRA-git=/{print $2; exit}' "$ROOT/PINNED_VERSIONS.txt" 2>/dev/null || true)"
+  _infra_pin="${_infra_pin// /}"
   if [[ ! -d "$GA4GH_INFRA_SRC/.git" ]]; then
-    echo "[demo] cloning ga4gh-infra into $GA4GH_INFRA_SRC (sibling of Ferrum for path deps)..."
+    if [[ -z "$_infra_pin" && "$_allow_unpin" != "1" ]]; then
+      echo "[demo] PINNED_VERSIONS.txt has empty GA4GH-INFRA-git=; set a SHA or FERRUM_GA4GH_ALLOW_UNPINNED=1" >&2
+      exit 3
+    fi
+    echo "[demo] cloning ga4gh-infra into $GA4GH_INFRA_SRC ..."
     mkdir -p "$(dirname "$GA4GH_INFRA_SRC")"
-    git clone --depth 1 https://github.com/SynapticFour/ga4gh-infra.git "$GA4GH_INFRA_SRC"
+    git clone https://github.com/SynapticFour/ga4gh-infra.git "$GA4GH_INFRA_SRC"
+    if [[ -n "$_infra_pin" ]]; then
+      echo "[demo] checking out pinned GA4GH-INFRA-git=${_infra_pin}"
+      git -C "$GA4GH_INFRA_SRC" fetch --depth 1 origin "$_infra_pin"
+      git -C "$GA4GH_INFRA_SRC" checkout --detach "$_infra_pin"
+    else
+      echo "[demo] warn: cloning unpinned ga4gh-infra because FERRUM_GA4GH_ALLOW_UNPINNED=1"
+    fi
+  else
+    _have_infra="$(git -C "$GA4GH_INFRA_SRC" rev-parse HEAD)"
+    if [[ -n "$_infra_pin" && "$_have_infra" != "$_infra_pin" ]]; then
+      echo "[demo] ga4gh-infra at $GA4GH_INFRA_SRC is $_have_infra, pin is $_infra_pin" >&2
+      if [[ "$_allow_unpin" != "1" ]]; then
+        echo "[demo] refusing unpinned ga4gh-infra (set FERRUM_GA4GH_ALLOW_UNPINNED=1 to override)" >&2
+        exit 3
+      fi
+      echo "[demo] warn: continuing unpinned ga4gh-infra because FERRUM_GA4GH_ALLOW_UNPINNED=1"
+    fi
   fi
   export GA4GH_INFRA_SRC
+  if [[ -x "$GA4GH_INFRA_SRC/scripts/prepare-docker-vendor.sh" ]]; then
+    echo "[demo] ensuring ga4gh-infra docker/vendor (Dockerfiles COPY it)..."
+    bash "$GA4GH_INFRA_SRC/scripts/prepare-docker-vendor.sh"
+  elif [[ ! -d "$GA4GH_INFRA_SRC/docker/vendor" ]]; then
+    echo "[demo] ga4gh-infra docker/vendor missing; run scripts/prepare-docker-vendor.sh in that repo" >&2
+    exit 3
+  fi
 fi
 
-echo "[demo] applying GA4GH demo overlay to Ferrum sources..."
-if [[ -d "$FERUM_SRC/.git" ]]; then
-  git -C "$FERUM_SRC" checkout HEAD -- \
+echo "[demo] applying GA4GH demo overlay to Ferrum sources (WES TES workdir + docker executor)..."
+if [[ -d "$FERRUM_SRC/.git" ]]; then
+  git -C "$FERRUM_SRC" checkout HEAD -- \
     crates/ferrum-drs/src/repo.rs \
     crates/ferrum-tes/src/executors/docker.rs \
     deploy/Dockerfile.gateway \
@@ -131,9 +210,9 @@ fi
 rsync -a \
   --exclude='crates/ferrum-gateway/Cargo.toml' \
   --exclude='crates/ferrum-gateway/src/main.rs' \
-  "$ROOT/vendor/ferrum-overlay/" "$FERUM_SRC/"
-if [[ -d "$FERUM_SRC/.git" ]]; then
-  git -C "$FERUM_SRC" checkout HEAD -- crates/ferrum-drs/src/repo.rs 2>/dev/null || true
+  "$ROOT/vendor/ferrum-overlay/" "$FERRUM_SRC/"
+if [[ -d "$FERRUM_SRC/.git" ]]; then
+  git -C "$FERRUM_SRC" checkout HEAD -- crates/ferrum-drs/src/repo.rs 2>/dev/null || true
 fi
 
 echo "[demo] fetching GIAB / Platinum subset (falls back to synthetic on failure)..."
@@ -164,21 +243,23 @@ cleanup() {
   fi
 }
 trap cleanup EXIT
-( cd "$ROOT" && python3 -m http.server "$STATIC_PORT" --bind 0.0.0.0 ) &
+# Serve only workflows/ (not the repo root — that would expose Crypt4GH keys).
+# Bind 0.0.0.0 so TES containers can fetch via host.docker.internal (loopback is not enough).
+( cd "$ROOT/workflows" && python3 -m http.server "$STATIC_PORT" --bind 0.0.0.0 ) &
 STATIC_PID=$!
 sleep 1
 
 if [[ "${FERRUM_GA4GH_ENGINE}" == "nextflow" ]]; then
   if [[ "${FERRUM_GA4GH_CALLER}" == "gatk-rs" ]]; then
-    WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/workflows/tiny_hc_gatk_rs.nf"
+    WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/tiny_hc_gatk_rs.nf"
     echo "[demo] engine=nextflow caller=gatk-rs workflow=$WORKFLOW_URL"
   else
-    WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/workflows/tiny_hc.nf"
+    WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/tiny_hc.nf"
     echo "[demo] engine=nextflow caller=gatk (Broad) workflow=$WORKFLOW_URL"
   fi
   PARAMS_JSON="$ROOT/demo/nf_params.json"
 else
-  WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/workflows/tiny_hc.wdl"
+  WORKFLOW_URL="http://host.docker.internal:${STATIC_PORT}/tiny_hc.wdl"
   PARAMS_JSON="$ROOT/demo/inputs.json"
   echo "[demo] engine=wdl workflow=$WORKFLOW_URL"
 fi
@@ -199,7 +280,7 @@ fi
 
 echo "[demo] building & starting Ferrum stack (docker compose)..."
 (
-  cd "$FERUM_SRC/deploy"
+  cd "$FERRUM_SRC/deploy"
   # Fresh Postgres/MinIO volumes avoid half-applied migrations when re-running the demo.
   if [[ "${FERRUM_GA4GH_RESET_VOLUMES:-1}" == "1" ]]; then
     docker compose -p "$COMPOSE_PROJECT_NAME" \
@@ -271,6 +352,7 @@ except Exception:
     print(0)
 ")
 
+    INFRA_FAILED=0
     if [[ "$INFRA_AVAILABLE" -gt 0 ]]; then
         echo "[demo] ga4gh-infra detected ($INFRA_AVAILABLE services). Running co-deploy scenarios..."
         python3 - <<PYEOF
@@ -288,9 +370,12 @@ results = run_all(gateway, root, fs)
     json.dumps(results, indent=2), encoding='utf-8'
 )
 print(json.dumps({"ok": True, "summary": results["summary"]}))
-if not results.get("summary", {}).get("all_passed", False):
-    raise SystemExit(1)
 PYEOF
+        if python3 -c "import json; raise SystemExit(0 if json.load(open('$ROOT/results/co_deploy_results.json')).get('summary',{}).get('verdict')!='failed' else 1)"; then
+          INFRA_FAILED=0
+        else
+          INFRA_FAILED=1
+        fi
     else
         echo "[demo] ga4gh-infra services not reachable. Skipping co-deploy scenarios."
         python3 -c "
@@ -299,7 +384,8 @@ from pathlib import Path
 Path('$ROOT/results/co_deploy_results.json').write_text(
     json.dumps({'detected_features': {}, 'available_count': 0,
                 'scenarios': {}, 'summary': {'ran': 0, 'skipped': 4, 'errors': 0,
-                'all_passed': True, 'note': 'ga4gh-infra not running'}},
+                'all_passed': False, 'verdict': 'not_evaluated',
+                'note': 'ga4gh-infra not running'}},
     indent=2), encoding='utf-8')
 "
     fi
@@ -310,7 +396,8 @@ from pathlib import Path
 Path('$ROOT/results/co_deploy_results.json').write_text(
     json.dumps({'detected_features': {}, 'available_count': 0,
                 'scenarios': {}, 'summary': {'ran': 0, 'skipped': 4, 'errors': 0,
-                'all_passed': True, 'note': 'Run ./run --with-infra to enable co-deploy scenarios'}},
+                'all_passed': False, 'verdict': 'not_evaluated',
+                'note': 'Run ./run --with-infra to enable co-deploy scenarios'}},
     indent=2), encoding='utf-8')
 "
 fi
@@ -335,6 +422,16 @@ pipeline_pass() {
     "$ROOT/drs/mapping.json" \
     "$ROOT/demo/inputs.json" \
     "$INTERVAL"
+  if [[ "${FERRUM_GA4GH_CALLER}" == "gatk-rs" ]]; then
+    python3 - "$ROOT/demo/nf_params.json" "${FERRUM_GA4GH_GATK_RS_IMAGE}" <<'PY'
+import json, sys
+from pathlib import Path
+p = Path(sys.argv[1])
+d = json.loads(p.read_text(encoding="utf-8")) if p.is_file() else {}
+d["gatk_rs_image"] = sys.argv[2]
+p.write_text(json.dumps(d, indent=2) + "\n", encoding="utf-8")
+PY
+  fi
   export FERRUM_GA4GH_INPUT_DRS_URI
   FERRUM_GA4GH_INPUT_DRS_URI="$(
     python3 -c "import json; print(json.load(open('$ROOT/drs/mapping.json'))['objects']['input_bam']['drs_uri'])"
@@ -395,7 +492,7 @@ pipeline_pass() {
 
   GW_CID="$(
     docker compose -p "$COMPOSE_PROJECT_NAME" \
-      -f "$FERUM_SRC/deploy/docker-compose.yml" \
+      -f "$FERRUM_SRC/deploy/docker-compose.yml" \
       -f "$ROOT/demo/docker-compose.ga4gh.yml" \
       ps -q ferrum-gateway 2>/dev/null | head -1 || true
   )"
@@ -434,22 +531,24 @@ else
   pipeline_pass primary "${FERRUM_GA4GH_ENCRYPT_INGEST:-0}"
 fi
 
-# ── Africa feature detection + scenarios (always runs; gracefully skips unavailable features) ──
+# ── Africa probes always; scenarios fail the process only with --africa ──
 echo "[demo] detecting Africa features in running Ferrum instance..."
 python3 "$ROOT/demo/lib/africa_feature_detect.py" "$GATEWAY" \
     > "$ROOT/results/africa_features.json" 2>/dev/null || true
 
 AFRICA_AVAILABLE=$(python3 -c "
-import json, sys
+import json
 try:
     d = json.load(open('$ROOT/results/africa_features.json'))
     print(d.get('available_count', 0))
 except Exception:
     print(0)
 ")
+AFRICA_MODE="${FERRUM_GA4GH_AFRICA_MODE:-0}"
+AFRICA_FAILED=0
 
-if [[ "$AFRICA_AVAILABLE" -gt 0 ]]; then
-    echo "[demo] Africa features detected ($AFRICA_AVAILABLE available). Running scenarios..."
+if [[ "$AFRICA_MODE" == "1" && "$AFRICA_AVAILABLE" -gt 0 ]]; then
+    echo "[demo] --africa: features detected ($AFRICA_AVAILABLE). Running scenarios..."
     python3 - <<PYEOF
 import sys, json
 sys.path.insert(0, '$ROOT/demo/lib')
@@ -466,16 +565,46 @@ results = run_all(gateway, root, fs)
 )
 print(json.dumps({"ok": True, "summary": results["summary"]}))
 PYEOF
+    AFRICA_FAILED=0
+    if python3 -c "import json; raise SystemExit(0 if json.load(open('$ROOT/results/africa_results.json')).get('summary',{}).get('verdict')!='failed' else 1)"; then
+      AFRICA_FAILED=0
+    else
+      AFRICA_FAILED=1
+    fi
+elif [[ "$AFRICA_AVAILABLE" -gt 0 ]]; then
+    echo "[demo] Africa endpoints detected ($AFRICA_AVAILABLE) but --africa was not set; recording not_evaluated (not a pass, not a fail of the GA4GH smoke)."
+    python3 -c "
+import json
+from pathlib import Path
+feat = {}
+p = Path('$ROOT/results/africa_features.json')
+if p.is_file():
+    try:
+        feat = json.loads(p.read_text())
+    except Exception:
+        feat = {}
+Path('$ROOT/results/africa_results.json').write_text(
+    json.dumps({
+        'detected_features': (feat.get('features') or {}),
+        'available_count': int('$AFRICA_AVAILABLE'),
+        'scenarios': {},
+        'summary': {
+            'ran': 0, 'skipped': 6, 'errors': 0,
+            'all_passed': False, 'verdict': 'not_evaluated',
+            'note': 'Africa scenarios run only with ./run --africa. Detection is not a pass.',
+        },
+    }, indent=2), encoding='utf-8')
+"
 else
-    echo "[demo] No Africa features detected in this Ferrum build. Skipping Africa scenarios."
-    echo "[demo] To enable Africa features, apply the Africa Cursor Prompts to Ferrum upstream."
+    echo "[demo] No Africa features detected. Recording not_evaluated (not a pass)."
     python3 -c "
 import json
 from pathlib import Path
 Path('$ROOT/results/africa_results.json').write_text(
     json.dumps({'detected_features': {}, 'available_count': 0,
                 'scenarios': {}, 'summary': {'ran': 0, 'skipped': 6, 'errors': 0,
-                'all_passed': True, 'note': 'No Africa features in this Ferrum build'}},
+                'all_passed': False, 'verdict': 'not_evaluated',
+                'note': 'No Africa-specific endpoints in this Ferrum build'}},
     indent=2), encoding='utf-8')
 "
 fi
@@ -488,8 +617,8 @@ fi
 python3 "$ROOT/demo/lib/compose_metrics.py" "$METRICS_MODE" "$ROOT"
 
 echo "[demo] dataset on-disk profile + engine timing merge..."
-python3 "$ROOT/scripts/dataset_profile.py" "$ROOT" || true
-python3 "$ROOT/demo/lib/update_engine_compare.py" "$ROOT" || true
+python3 "$ROOT/scripts/dataset_profile.py" "$ROOT"
+python3 "$ROOT/demo/lib/update_engine_compare.py" "$ROOT"
 
 python3 "$ROOT/scripts/update_docs.py" \
   --repo-root "$ROOT" \
@@ -498,5 +627,17 @@ python3 "$ROOT/scripts/update_docs.py" \
   --readme "$ROOT/README.md" \
   --bench-md "$ROOT/docs/benchmark.md"
 
+python3 "$ROOT/demo/lib/write_run_manifest.py" "$ROOT"
+
 TOTAL_ELAPSED=$(( $(date +%s) - TS_START ))
 echo "[demo] done (wall clock since script start: ${TOTAL_ELAPSED}s)"
+echo "[demo] Read results/RUN_MANIFEST.json for what this run did and did not prove."
+if [[ "${AFRICA_FAILED:-0}" != "0" ]]; then
+  echo "[demo] --africa scenarios failed (see results/africa_results.json). GA4GH smoke artefacts were still written." >&2
+fi
+if [[ "${INFRA_FAILED:-0}" != "0" ]]; then
+  echo "[demo] --with-infra co-deploy scenarios failed (see results/co_deploy_results.json). GA4GH smoke artefacts were still written." >&2
+fi
+if [[ "${AFRICA_FAILED:-0}" != "0" || "${INFRA_FAILED:-0}" != "0" ]]; then
+  exit 1
+fi

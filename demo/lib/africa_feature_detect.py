@@ -4,11 +4,9 @@ Probe a running Ferrum gateway to detect which Africa-specific features
 are available. Returns a FeatureSet that other Africa scenario scripts
 consume to decide what to run.
 
-All probes are non-destructive GET requests. A feature is considered
-'available' if the relevant endpoint responds with HTTP 200 or 404
-(not 404 in the sense of "not found" but "endpoint exists, no data").
-A feature is 'unavailable' if the endpoint returns 404 with a specific
-"route not found" pattern, or 405, or connection error.
+A feature is available only when the probe shows the *capability*, not merely
+that a generic GA4GH route returned HTTP 200 (e.g. Beacon /info exists on
+stock Ferrum and must not imply PathoGenFilter).
 """
 from __future__ import annotations
 
@@ -17,25 +15,23 @@ import urllib.error
 import urllib.request
 from dataclasses import dataclass
 
+from evidence_contract import beacon_has_pathogen_filter_terms
+
 
 @dataclass
 class AfricaFeatureSet:
-    offline_mode: bool = False          # FERRUM_OFFLINE=1 + SQLite backend
+    offline_mode: bool = False          # health.db == sqlite
     ont_ingestion: bool = False         # POST /api/v1/ingest/ont endpoint exists
-    multi_pathogen_beacon: bool = False # Beacon v2 PathoGenFilter available
+    multi_pathogen_beacon: bool = False # Beacon /info lists PathoGenFilter
     outbreak_mode: bool = False         # POST /api/v1/outbreak/activate exists
-    federated_beacon: bool = False      # GET /ga4gh/beacon/v2?federate=true supported
-    bandwidth_adaptive: bool = False    # Transfer-Checkpoint header present
+    federated_beacon: bool = False      # federate=true response includes meta.federation
+    bandwidth_adaptive: bool = False    # DRS service-info supported_features
     power_monitor: bool = False         # GET /api/v1/health/power endpoint exists
     residency_audit: bool = False       # GET /api/v1/audit/residency endpoint exists
     reference_registry: bool = False    # GET /api/v1/references endpoint exists
 
     def any_available(self) -> bool:
-        return any([
-            self.offline_mode, self.ont_ingestion, self.multi_pathogen_beacon,
-            self.outbreak_mode, self.federated_beacon, self.bandwidth_adaptive,
-            self.power_monitor, self.residency_audit, self.reference_registry,
-        ])
+        return any(self.summary().values())
 
     def summary(self) -> dict:
         return {
@@ -57,61 +53,70 @@ class AfricaFeatureSet:
         return [k for k, v in self.summary().items() if not v]
 
 
-def _probe(gateway: str, path: str, method: str = "GET") -> bool:
-    """Return True if endpoint exists (2xx or known-data-404), False if route missing."""
+def _probe_route_exists(gateway: str, path: str, method: str = "GET") -> bool:
+    """True if a dedicated route exists (not a generic framework 404)."""
     url = f"{gateway.rstrip('/')}{path}"
     try:
         req = urllib.request.Request(url, method=method)
         with urllib.request.urlopen(req, timeout=5) as resp:
             return resp.status < 500
     except urllib.error.HTTPError as e:
-        # 404 from a real route (e.g. "no entries yet") = feature exists
-        # 404 from "route not found" = feature absent
         if e.code == 404:
             try:
                 body = e.read().decode("utf-8", errors="replace")
                 if "route not found" in body.lower() or "no such" in body.lower():
                     return False
+                # 404 from an implemented handler (empty collection, missing policy).
                 return True
-            except Exception:
+            except OSError:
                 return False
+        if e.code in (400, 401, 403, 409, 415, 422):
+            return True
         if e.code in (405, 501):
             return False
         return False
-    except (OSError, ConnectionRefusedError, TimeoutError):
+    except (OSError, TimeoutError):
         return False
+
+
+def _json_get(gateway: str, path: str) -> dict | None:
+    url = f"{gateway.rstrip('/')}{path}"
+    try:
+        req = urllib.request.Request(url, method="GET")
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            return json.loads(resp.read())
+    except (OSError, TimeoutError, urllib.error.HTTPError, json.JSONDecodeError):
+        return None
 
 
 def detect(gateway: str) -> AfricaFeatureSet:
     """Probe gateway and return detected feature set."""
     fs = AfricaFeatureSet()
 
-    try:
-        req = urllib.request.Request(f"{gateway.rstrip('/')}/health")
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            body = json.loads(resp.read())
-            fs.offline_mode = body.get("db") == "sqlite"
-    except Exception:
-        pass
+    health = _json_get(gateway, "/health")
+    if isinstance(health, dict):
+        fs.offline_mode = health.get("db") == "sqlite"
 
-    fs.ont_ingestion = _probe(gateway, "/api/v1/ingest/ont", "POST")
-    fs.multi_pathogen_beacon = _probe(gateway, "/ga4gh/beacon/v2/info")
-    fs.outbreak_mode = _probe(gateway, "/api/v1/outbreak/activate", "POST")
-    fs.federated_beacon = _probe(
-        gateway,
-        "/ga4gh/beacon/v2/g_variants?federate=true&limit=0"
+    fs.ont_ingestion = _probe_route_exists(gateway, "/api/v1/ingest/ont", "POST")
+
+    info = _json_get(gateway, "/ga4gh/beacon/v2/info")
+    fs.multi_pathogen_beacon = bool(info) and beacon_has_pathogen_filter_terms(info)
+
+    fs.outbreak_mode = _probe_route_exists(gateway, "/api/v1/outbreak/activate", "POST")
+
+    fed = _json_get(gateway, "/ga4gh/beacon/v2/g_variants?federate=true&limit=0")
+    fs.federated_beacon = isinstance(fed, dict) and isinstance(
+        (fed.get("meta") or {}).get("federation"), dict
     )
-    try:
-        req = urllib.request.Request(f"{gateway.rstrip('/')}/ga4gh/drs/v1/service-info")
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            body = json.loads(resp.read())
-            fs.bandwidth_adaptive = "bandwidth_adaptive" in body.get("supported_features", [])
-    except Exception:
-        pass
 
-    fs.power_monitor = _probe(gateway, "/api/v1/health/power")
-    fs.residency_audit = _probe(gateway, "/api/v1/audit/residency")
-    fs.reference_registry = _probe(gateway, "/api/v1/references")
+    drs_info = _json_get(gateway, "/ga4gh/drs/v1/service-info")
+    if isinstance(drs_info, dict):
+        supported = drs_info.get("supported_features") or []
+        fs.bandwidth_adaptive = "bandwidth_adaptive" in supported
+
+    fs.power_monitor = _probe_route_exists(gateway, "/api/v1/health/power")
+    fs.residency_audit = _probe_route_exists(gateway, "/api/v1/audit/residency")
+    fs.reference_registry = _probe_route_exists(gateway, "/api/v1/references")
 
     return fs
 

@@ -37,14 +37,13 @@ process HaplotypeCaller {
         ln -s ${truth_vcf} truth.vcf.gz
         ln -s ${truth_vcf_index} truth.vcf.gz.tbi
         gatk CreateSequenceDictionary -R ref_local.fa -O ref_local.dict
+        # Caller is blind to the truth VCF (localized via DRS for ingest demo only).
         gatk --java-options "-Xmx3g" HaplotypeCaller \\
             -R ref_local.fa \\
             -I input_local.bam \\
             -O output.vcf.gz \\
             -L ${interval} \\
-            --alleles truth.vcf.gz \\
-            --standard-min-confidence-threshold-for-calling 10.0 \\
-            --minimum-mapping-quality 0
+            --standard-min-confidence-threshold-for-calling 10.0
         if [[ ! -f output.vcf.gz.tbi ]]; then
             gatk IndexFeatureFile -I output.vcf.gz
         fi

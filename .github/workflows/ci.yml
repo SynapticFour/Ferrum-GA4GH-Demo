@@ -7,19 +7,17 @@ on:
   pull_request:
     branches: [main, master]
 
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  scripts-and-python:
-    if: github.actor != 'dependabot[bot]'
+  unit-and-syntax:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      - name: Bash syntax (entrypoints + repo shell scripts)
+      - name: Bash syntax
         run: |
           set -euo pipefail
           bash -n run
@@ -28,65 +26,32 @@ jobs:
             bash -n "$f"
           done < <(find scripts benchmark demo -type f -name '*.sh' -print0 2>/dev/null | sort -z)
 
-      - name: Python (demo lib + scripts)
-        run: python3 -m compileall -q demo/lib scripts
+      - name: Python compile
+        run: python3 -m compileall -q demo/lib scripts tests
 
-  village-network-syntax:
-    if: github.actor != 'dependabot[bot]'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - run: bash -n demo/scenarios/village-network/run-village-demo.sh
-      - run: bash -n demo/scenarios/raspberry-pi/install-ferrum-edge.sh
-      - run: docker compose -f demo/scenarios/village-network/docker-compose.village.yml config
+      - name: Unit tests
+        run: python3 -m unittest discover -s tests -t . -p 'test_*.py' -v
 
-  africa-scripts-check:
-    if: github.actor != 'dependabot[bot]'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Syntax check Africa Python files
-        run: python3 -m compileall -q demo/lib/africa_feature_detect.py demo/lib/africa_scenarios.py
-      - name: Import check (no running Ferrum needed)
+      - name: Village compose config
         run: |
-          cd demo/lib
-          python3 -c "import africa_feature_detect; print('africa_feature_detect OK')"
-          python3 -c "import africa_scenarios; print('africa_scenarios OK')"
-          python3 -c "
-          from africa_feature_detect import detect
-          fs = detect('http://127.0.0.1:1')
-          assert not fs.any_available(), 'Should return no features for unreachable gateway'
-          print('Graceful degradation OK')
-          "
-      - name: Verify run script parses --africa and --with-infra flags
-        run: |
-          bash -n run
-          grep -q '\-\-africa' run && echo '--africa present'
-          grep -q '\-\-with-infra' run && echo '--with-infra present'
-      - name: Verify docker-compose.africa.yml is valid YAML
+          bash -n demo/scenarios/village-network/run-village-demo.sh
+          bash -n demo/scenarios/raspberry-pi/install-ferrum-edge.sh
+          FERRUM_IMAGE=ghcr.io/synapticfour/ferrum:pin-me \
+            docker compose -f demo/scenarios/village-network/docker-compose.village.yml config >/dev/null
+
+      - name: Africa / co-deploy imports
         run: |
           pip install --quiet pyyaml
+          python3 -c "
+          import sys
+          sys.path.insert(0, 'demo/lib')
+          import africa_feature_detect, africa_scenarios, infra_feature_detect, co_deploy_scenarios
+          from evidence_contract import scenario_summary
+          fs = africa_feature_detect.detect('http://127.0.0.1:1')
+          assert not fs.any_available()
+          s = scenario_summary({})
+          assert s['verdict'] == 'not_evaluated' and s['all_passed'] is False
+          print('OK')
+          "
           python3 -c "import yaml; yaml.safe_load(open('demo/docker-compose.africa.yml'))"
-
-  co-deploy-scripts-check:
-    if: github.actor != 'dependabot[bot]'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Syntax check co-deploy Python files
-        run: python3 -m compileall -q demo/lib/infra_feature_detect.py demo/lib/co_deploy_scenarios.py
-      - name: Import check (no running stack needed)
-        run: |
-          cd demo/lib
-          python3 -c "import infra_feature_detect; print('infra_feature_detect OK')"
-          python3 -c "import co_deploy_scenarios; print('co_deploy_scenarios OK')"
-          python3 -c "
-          from infra_feature_detect import detect
-          fs = detect(broker='http://127.0.0.1:1')
-          assert not fs.any_available(), 'Should return no features for unreachable infra'
-          print('Graceful degradation OK')
-          "
-      - name: Verify co-deploy compose YAML
-        run: |
-          pip install --quiet pyyaml
           python3 -c "import yaml; yaml.safe_load(open('demo/docker-compose.co-deploy.yml'))"

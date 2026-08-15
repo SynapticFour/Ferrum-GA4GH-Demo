@@ -2,7 +2,7 @@ nextflow.enable.dsl = 2
 
 // Optional Alpha path: Rust gatk-rs HaplotypeCaller under Ferrum WES→TES.
 // Default demo remains workflows/tiny_hc.nf (Broad GATK 4.4). Soft-fail if image missing.
-// Image: gatkr/gatk-rs:latest (or FERRUM_GA4GH_GATK_RS_IMAGE). No tabix in that image —
+// Image: set params.gatk_rs_image from FERRUM_GA4GH_GATK_RS_IMAGE (pinned). No default :latest.
 // CompressIndex uses htslib biocontainer for .vcf.gz + .tbi expected by hap.py.
 
 params.input_bam = ""
@@ -12,7 +12,7 @@ params.ref_fasta_index = ""
 params.truth_vcf = ""
 params.truth_vcf_index = ""
 params.interval = ""
-params.gatk_rs_image = "gatkr/gatk-rs:latest"
+params.gatk_rs_image = ""
 
 process HaplotypeCallerRs {
     container "${params.gatk_rs_image}"
@@ -41,15 +41,13 @@ process HaplotypeCallerRs {
         ln -s ${input_bam_index} input_local.bam.bai
         ln -s ${truth_vcf} truth.vcf.gz
         ln -s ${truth_vcf_index} truth.vcf.gz.tbi
-        # gatk-rs Alpha: no CreateSequenceDictionary; --alleles / --min-mapping-quality CLI differs from Broad.
+        # gatk-rs Alpha: no CreateSequenceDictionary. Caller is blind to truth VCF.
         gatk-rs HaplotypeCaller \\
             -R ref_local.fa \\
             -I input_local.bam \\
             -O output.vcf \\
             -L ${interval} \\
-            --alleles truth.vcf.gz \\
-            --standard-min-confidence-threshold-for-calling 10.0 \\
-            --min-mapping-quality 0
+            --standard-min-confidence-threshold-for-calling 10.0
         """
 }
 

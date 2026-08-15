@@ -1,5 +1,8 @@
 # Reproducibility (paper bundle)
 Generated (UTC): `2026-03-22 13:31:37Z`
+
+**Withdrawn as a scientific GIAB claim:** this snapshot’s hap.py F1=1.0 was produced while HaplotypeCaller received `--alleles` truth on a tiny (including synthetic) slice. Keep the JSON as a pipeline-timing artefact only. Re-run `./run` on current `main` for a blind-caller smoke.
+
 ## Ferrum-GA4GH-Demo
 - **Git commit (this snapshot):** run `git log -1 --format=%H -- docs/paper/20260322T1331Z` from the repo root after checkout (stable pointer to the tree that contains this folder).
 - **Branch:** `main`

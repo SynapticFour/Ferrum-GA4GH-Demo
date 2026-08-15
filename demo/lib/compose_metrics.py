@@ -70,7 +70,8 @@ def main() -> None:
                 "available_features": africa_data.get("available_count", 0),
                 "scenarios_ran": africa_data.get("summary", {}).get("ran", 0),
                 "scenarios_skipped": africa_data.get("summary", {}).get("skipped", 0),
-                "all_passed": africa_data.get("summary", {}).get("all_passed", True),
+                "all_passed": africa_data.get("summary", {}).get("all_passed", False),
+                "verdict": africa_data.get("summary", {}).get("verdict", "not_evaluated"),
             }
         except (OSError, json.JSONDecodeError):
             pass
@@ -83,7 +84,8 @@ def main() -> None:
                 "available_services": co_data.get("available_count", 0),
                 "scenarios_ran": co_data.get("summary", {}).get("ran", 0),
                 "scenarios_skipped": co_data.get("summary", {}).get("skipped", 0),
-                "all_passed": co_data.get("summary", {}).get("all_passed", True),
+                "all_passed": co_data.get("summary", {}).get("all_passed", False),
+                "verdict": co_data.get("summary", {}).get("verdict", "not_evaluated"),
             }
         except (OSError, json.JSONDecodeError):
             pass

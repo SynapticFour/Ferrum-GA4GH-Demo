@@ -28,4 +28,4 @@ target/
 .ruff_cache/
 
 # Local demo run logs
-eploy-*.log
+deploy-*.log
