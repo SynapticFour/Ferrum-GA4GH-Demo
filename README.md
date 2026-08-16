@@ -22,7 +22,7 @@ This demo is **proof / outreach**, not one of five products. Portfolio: [docs/EC
 
 ## Prerequisites
 
-Docker (~**8 GB** RAM), `git`, `python3`, `curl`, `bash`, network (clone Ferrum, images, public data). **Sizing & phases:** [docs/architecture.md](docs/architecture.md).
+Docker (~**8 GB** RAM, ~**20 GB** disk), `git`, `python3`, `curl`, `bash`, network (clone Ferrum, images, public data). **Sizing & phases:** [docs/architecture.md](docs/architecture.md).
 
 **Demo-only security:** the gateway mounts `docker.sock` so Cromwell can start GATK. The static HTTP server listens on `0.0.0.0` but serves **only** `workflows/`. Crypt4GH `node.sec` is a non-production fixture. Do not copy this compose posture to a hospital network.
 

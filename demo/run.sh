@@ -294,7 +294,7 @@ echo "[demo] building & starting Ferrum stack (docker compose)..."
 
 echo "[demo] pre-pull workflow images (best-effort; skip if offline)..."
 docker pull broadinstitute/cromwell:93-0232cbd >/dev/null 2>&1 || true
-docker pull broadinstitute/gatk:4.4.0.0 >/dev/null 2>&1 || true
+docker pull broadinstitute/gatk:4.4.0.0@sha256:044112d3d70603732d4a654ecaee33919cf9d45332d47268f5f1697b6ed558ed >/dev/null 2>&1 || true
 if [[ "${FERRUM_GA4GH_CALLER}" == "gatk-rs" ]]; then
   docker pull "${FERRUM_GA4GH_GATK_RS_IMAGE}" >/dev/null 2>&1 || true
   docker pull quay.io/biocontainers/htslib:1.19--h5e77b09_0 >/dev/null 2>&1 || true

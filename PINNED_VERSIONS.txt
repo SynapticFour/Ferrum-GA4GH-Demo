@@ -17,7 +17,7 @@ GA4GH-INFRA-git=613bd14932b57e30cfdca7b413841fe5b07a80fd
 # Executor images (demo overlay; see vendor/ferrum-overlay and compose)
 Cromwell-image=broadinstitute/cromwell:93-0232cbd
 Nextflow-tag=24.10.3
-GATK-image=broadinstitute/gatk:4.4.0.0
+GATK-image=broadinstitute/gatk:4.4.0.0@sha256:044112d3d70603732d4a654ecaee33919cf9d45332d47268f5f1697b6ed558ed
 
 # Optional Alpha path — not evidence-grade. Empty until you pin a digest.
 # :latest is refused unless FERRUM_GA4GH_ALLOW_LATEST=1.

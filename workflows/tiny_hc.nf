@@ -9,7 +9,7 @@ params.truth_vcf_index = ""
 params.interval = ""
 
 process HaplotypeCaller {
-    container 'broadinstitute/gatk:4.4.0.0'
+    container 'broadinstitute/gatk:4.4.0.0@sha256:044112d3d70603732d4a654ecaee33919cf9d45332d47268f5f1697b6ed558ed'
     cpus 2
     memory '4 GB'
 

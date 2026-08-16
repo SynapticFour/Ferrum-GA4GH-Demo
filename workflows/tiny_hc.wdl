@@ -69,7 +69,7 @@ task HaplotypeCaller {
   }
 
   runtime {
-    docker: "broadinstitute/gatk:4.4.0.0"
+    docker: "broadinstitute/gatk:4.4.0.0@sha256:044112d3d70603732d4a654ecaee33919cf9d45332d47268f5f1697b6ed558ed"
     memory: "4 GB"
     cpu: 2
   }
