@@ -17,4 +17,4 @@ Until then, ignore Semantic Versioning language in older copies of this file.
 
 ## Release train (portfolio)
 
-When **Ferrum** is tagged: the same week, bump `Ferrum-git` in [PINNED_VERSIONS.txt](PINNED_VERSIONS.txt) (and drop `vendor/ferrum-overlay` once that tag contains the TES/residency honesty). When **ga4gh-infra** is tagged: bump `GA4GH-INFRA-git`. Showcase pins **tags that exist on origin/main**. See [Ferrum PORTFOLIO.md](https://github.com/SynapticFour/Ferrum/blob/main/docs/PORTFOLIO.md).
+When **Ferrum** is tagged: the same week, bump `Ferrum-git` in [PINNED_VERSIONS.txt](PINNED_VERSIONS.txt). Overlay is retired as of Ferrum **v0.3.1**. When **ga4gh-infra** is tagged: bump `GA4GH-INFRA-git`. Showcase pins **tags that exist on origin/main**. See [Ferrum PORTFOLIO.md](https://github.com/SynapticFour/Ferrum/blob/main/docs/PORTFOLIO.md).

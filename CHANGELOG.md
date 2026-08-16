@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Ferrum pin v0.3.1** — stock checkout, `vendor/ferrum-overlay` removed. TES poll and residency hash are upstream.
+
 ### Added
 
 - **`docs/PERSONA.md`** — institute persona sheet (what `./run` proved vs not).

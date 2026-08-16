@@ -2,7 +2,7 @@
 
 **Proof / outreach — not a product, not a pilot, not an evaluation kit.** Local laptop smoke of [Ferrum](https://github.com/SynapticFour/Ferrum). Persona: [docs/PERSONA.md](docs/PERSONA.md).
 
-**Stock Ferrum v0.3.0 is not enough for this `./run` path.** `demo/run.sh` rsyncs `vendor/ferrum-overlay/` onto the cloned Ferrum tree before build. Ferrum `main` already contains the honest TES poll and residency timestamp fix; this overlay is a **backport onto the v0.3.0 pin**. Treat a green `./run` as proof of the overlayed pin until the next Ferrum tag.
+**Stock Ferrum v0.3.1 is the `./run` pin.** No `vendor/ferrum-overlay`. TES poll and residency timestamps live upstream. A green `./run` is proof of **tagged** Ferrum, not a patched checkout.
 
 Single command to run **Ferrum** **DRS · WES · TES** (plus a **TRS descriptor fetch**) on a **tiny** slice, then **hap.py vs local truth**.
 
@@ -33,7 +33,7 @@ Docker (~**8 GB** RAM, ~**20 GB** disk), `git`, `python3`, `curl`, `bash`, netwo
 # or: make up
 ```
 
-Requires a **pinned** Ferrum git SHA in [PINNED_VERSIONS.txt](PINNED_VERSIONS.txt) (**v0.3.0**). Override only with `FERRUM_GA4GH_ALLOW_UNPINNED=1`. Canonical checkout env: **`FERRUM_SRC`** (default `.cache/stack/Ferrum`; `FERUM_SRC` still accepted as a deprecated alias).
+Requires a **pinned** Ferrum git SHA in [PINNED_VERSIONS.txt](PINNED_VERSIONS.txt) (**v0.3.1**). Override only with `FERRUM_GA4GH_ALLOW_UNPINNED=1`. Canonical checkout env: **`FERRUM_SRC`** (default `.cache/stack/Ferrum`; `FERUM_SRC` still accepted as a deprecated alias).
 
 Co-deploy **Ferrum + ga4gh-infra** (identity plane + data/compute):
 
@@ -122,7 +122,7 @@ Details: [docs/benchmark.md](docs/benchmark.md) (reviewer summary after a run).
 | [docs/ECOSYSTEM.md](docs/ECOSYSTEM.md) | Portfolio role (proof/outreach, not a product) |
 | [docs/COVERAGE.md](docs/COVERAGE.md) | What Demo proves vs Showcase/HelixTest; smoke targets |
 | [PINNED_VERSIONS.txt](PINNED_VERSIONS.txt) | Ferrum/git + executor image pins |
-| [docs/architecture.md](docs/architecture.md) | Diagram, data plane, overlay, resources |
+| [docs/architecture.md](docs/architecture.md) | Diagram, data plane, resources |
 | [docs/benchmark.md](docs/benchmark.md) | Last run tables (regenerated; read RUN_MANIFEST first) |
 
 ## Repository layout
@@ -134,7 +134,6 @@ Details: [docs/benchmark.md](docs/benchmark.md) (reviewer summary after a run).
 | `demo/scenarios/raspberry-pi/install-ferrum-edge.sh` | Pi 5 installer (pinned image required) |
 | `demo/docker-compose.ga4gh.yml` | TES, WES workdir, `docker.sock` (demo-only), Crypt4GH keys |
 | `demo/lib/*.py` | Ingest, WES JSON, metrics, Africa scenarios, manifests |
-| `vendor/ferrum-overlay/` | Ferrum-derived TES/WES workdir + residency hash patch (BUSL-1.1; see NOTICE) |
 | `workflows/tiny_hc.{wdl,nf}` | Minimal HaplotypeCaller (**no** `--alleles`) |
 | `scripts/` | Fetch, TRS cache, DRS micro-bench, `dataset_profile.py`, `update_docs.py` |
 | `tests/` | Unit tests for evidence contract, probes, caller honesty |
@@ -167,8 +166,8 @@ Numbers below are a **pipeline smoke**. If the dataset row says synthetic, do no
 
 ## Licence
 
-This **repository** is [Apache-2.0](LICENSE) except `vendor/ferrum-overlay/`, which is Ferrum-derived **BUSL-1.1** (see [NOTICE](NOTICE)). [Ferrum](https://github.com/SynapticFour/Ferrum) upstream remains **BUSL-1.1**. GATK / Dockstore descriptors follow their upstream licences.
+This **repository** is [Apache-2.0](LICENSE). [Ferrum](https://github.com/SynapticFour/Ferrum) remains **BUSL-1.1** (see [NOTICE](NOTICE)). GATK / Dockstore descriptors follow their upstream licences.
 
 ---
 
-**Synaptic Four** · [contact@synapticfour.com](mailto:contact@synapticfour.com) · [synapticfour.com](https://synapticfour.com) · this repo Apache-2.0; Ferrum overlay/binaries BUSL-1.1
+**Synaptic Four** · [contact@synapticfour.com](mailto:contact@synapticfour.com) · [synapticfour.com](https://synapticfour.com) · this repo Apache-2.0; Ferrum binaries BUSL-1.1

@@ -83,13 +83,9 @@ Single `./run` (no `--macro`): only the **current** ingest’s `ref_fasta` is ti
 
 Extra clone path: **`FERRUM_SRC`** (deprecated alias `FERUM_SRC`, default `.cache/stack/Ferrum`). Pin is required. See [PINNED_VERSIONS.txt](../PINNED_VERSIONS.txt).
 
-## Patch overlay (demo)
+## Stock Ferrum pin (demo)
 
-`vendor/ferrum-overlay/` is rsync’d onto the **pinned** Ferrum checkout (v0.3.0) before `docker compose build`. Overlay Rust is **BUSL-1.1** (NOTICE). Pin checkout failure is a hard error unless `FERRUM_GA4GH_ALLOW_UNPINNED=1`. `ferrum-gateway` `Cargo.toml` / `main.rs` are **not** rsynced (those overlay copies would strip features).
-
-- **`ferrum-wes` `executors/tes.rs`** — Ferrum v0.3.0 workdir/log persistence; **no** synthetic HelixTest QUEUED/RUNNING delay; pinned Cromwell / Nextflow images.
-- **`ferrum-tes` `executors/docker.rs`** — docker executor + bind policy (stock TES is noop without `tes-docker`).
-- **`ferrum-core` `residency.rs`** — hash audit timestamps as **microsecond Zulu** so Postgres `timestamptz` round-trips keep `chain_valid` true. Stock v0.3.0 `to_rfc3339()` (nanos / `+00:00` vs `Z`) makes verify return false.
+`./run` clones Ferrum **v0.3.1** (`Ferrum-git` in PINNED_VERSIONS.txt) and builds it **unpatched**. TES poll honesty and residency microsecond-Zulu hashing are upstream. Pin checkout failure is a hard error unless `FERRUM_GA4GH_ALLOW_UNPINNED=1`.
 
 Compose **`FERRUM_GATEWAY_FEATURES=tes-docker`**, **`FERRUM_TES_DOCKER_*`**, **`FERRUM_WES_TES_*`** follow [Ferrum](https://github.com/SynapticFour/Ferrum). Conformance: [HelixTest](https://github.com/SynapticFour/HelixTest). Lab on-ramp: [Ferrum-Lab-Kit](https://github.com/SynapticFour/Ferrum-Lab-Kit).
 
@@ -119,7 +115,7 @@ flowchart LR
   H -->|18082| N
 ```
 
-`demo/run.sh` runs **`git checkout`** on paths we no longer overlay so stale patches in `.cache/stack/Ferrum` are dropped. DRS `repo.rs` is **not** patched.
+`demo/run.sh` runs **`git checkout`** on TES/WES/residency paths so a leftover overlay in `.cache/stack/Ferrum` cannot survive a pin bump. DRS `repo.rs` is **not** patched.
 
 **Host vs container paths:** `demo/run.sh` sets **`FERUM_WES_WORK_HOST`** to **`$REPO/results/wes-work`** (absolute), passed into compose as **`FERRUM_WES_TES_WORK_HOST_PREFIX`**. Custom bind: **`FERRUM_GA4GH_WES_HOST_OVERRIDE`** (absolute path on the Docker host).
 

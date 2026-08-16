@@ -7,14 +7,14 @@
 # Deprecated alias (typo in early docs): FERUM_SRC
 
 # Required unless FERRUM_GA4GH_ALLOW_UNPINNED=1. Empty pin = demo refuses to clone.
-# Ferrum v0.3.0 tag (commit, not the annotated tag object).
-Ferrum-git=6444469ac488af9dd6f62f584b99be87ff2d7180
+# Ferrum v0.3.1 tag (commit, not the annotated tag object). Stock pin — no overlay.
+Ferrum-git=f28f27800f1d92c6a76670c760d9beb444c368d6
 
 # Required for ./run --with-infra clone unless FERRUM_GA4GH_ALLOW_UNPINNED=1.
 # Matches Ferrum VERSIONS.lock GA4GH_INFRA_SHA (tag ga4gh-infra-v0.2.3).
 GA4GH-INFRA-git=613bd14932b57e30cfdca7b413841fe5b07a80fd
 
-# Executor images (demo overlay; see vendor/ferrum-overlay and compose)
+# Executor images (compose / WDL / Nextflow)
 Cromwell-image=broadinstitute/cromwell:93-0232cbd
 Nextflow-tag=24.10.3
 GATK-image=broadinstitute/gatk:4.4.0.0@sha256:044112d3d70603732d4a654ecaee33919cf9d45332d47268f5f1697b6ed558ed

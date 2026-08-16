@@ -43,6 +43,14 @@ Track important architectural and operational decisions here.
 
 ---
 
+### 2026-08-16 - Pin Ferrum v0.3.1; retire overlay
+
+- **Context:** Honesty fixes (TES poll, residency microsecond Zulu) landed on Ferrum main and shipped as **v0.3.1**.
+- **Decision:** Pin `Ferrum-git` to `f28f2780…`. Stop rsync. Delete `vendor/ferrum-overlay`.
+- **Consequences:** `./run` proves tagged Ferrum. Stale `.cache/stack/Ferrum` patches are `git checkout`'d away. Frozen paper snapshot `docs/paper/20260322T1331Z/` still mentions the old overlay path — do not rewrite it.
+
+---
+
 ### 2026-08-15 - Pin Ferrum v0.3.0; overlay residency hash; co-deploy issuer + workspace
 
 - **Context:** Ferrum v0.3.0 is the coordinated stack cut. Stock WES still had a

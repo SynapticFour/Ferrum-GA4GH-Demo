@@ -4,15 +4,13 @@ Ferrum-GA4GH-Demo
 Except as noted below, this repository is licensed under the Apache License,
 Version 2.0. See LICENSE.
 
-Ferrum overlay
---------------
+Ferrum pin
+----------
 
-Files under vendor/ferrum-overlay/ are derived from Ferrum
-(https://github.com/SynapticFour/Ferrum) and remain licensed under the
-Business Source License 1.1 (BUSL-1.1) of that project. They are not
-Apache-2.0. The demo rsyncs them onto a pinned Ferrum checkout so TES
-Docker + WES workdir binds work on a laptop. Do not redistribute those
-Rust sources under Apache-2.0.
+This demo clones [Ferrum](https://github.com/SynapticFour/Ferrum) at the
+commit in PINNED_VERSIONS.txt (currently tag **v0.3.1**) and builds it
+unpatched. Ferrum remains BUSL-1.1. Do not treat a green `./run` as an
+Apache Ferrum binary.
 
 Third-party
 -----------

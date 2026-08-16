@@ -105,14 +105,11 @@ def main() -> None:
             "errors": co_sum.get("errors", 0),
         },
         "overlay": {
-            "applied": True,
-            "paths": [
-                "vendor/ferrum-overlay/crates/ferrum-wes/src/executors/tes.rs",
-                "vendor/ferrum-overlay/crates/ferrum-tes/src/executors/docker.rs",
-            ],
+            "applied": False,
+            "paths": [],
             "note": (
-                "Demo rsyncs a small TES/WES workdir overlay onto the pinned Ferrum checkout. "
-                "WES poll_status reports TES state as-is (no HelixTest delay). Overlay Rust is Ferrum-derived (BUSL-1.1); see NOTICE."
+                "Pin is Ferrum v0.3.1. TES poll and residency hash live upstream. "
+                "No vendor/ferrum-overlay rsync."
             ),
         },
         "security_demo_only": [

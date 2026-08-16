@@ -103,7 +103,7 @@ if cli_ver.is_file():
 lines.append("\n## Pinned workflow / executor images (demo)\n")
 lines.append(
     "- **Cromwell (WES→TES bash mode):** `broadinstitute/cromwell:93-0232cbd` "
-    "(see `vendor/ferrum-overlay/crates/ferrum-wes/src/executors/tes.rs`)\n"
+    "(see Ferrum `crates/ferrum-wes/src/executors/tes.rs` at pin v0.3.1)\n"
 )
 lines.append("- **Nextflow (WES→TES):** `nextflow/nextflow:24.10.3`\n")
 lines.append("- **GATK (nested):** `broadinstitute/gatk:4.4.0.0` (WDL/NF in-repo workflows)\n")

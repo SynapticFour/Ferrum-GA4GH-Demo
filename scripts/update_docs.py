@@ -365,7 +365,7 @@ Artefacts: `results/benchmark.phase2_plain.json`, `results/benchmark.phase2_cryp
 1. **TRS (descriptor fetch only)** — Dockstore `ga4gh/trs/v2` JSON is cached under `workflows/cached/` and recorded in `results/trs_fetch.json` with `executed: false`. WES runs in-repo `tiny_hc.wdl` / `tiny_hc.nf`, not the Dockstore GATK germline WDL.
 2. **DRS** — Files ingested via `POST /ga4gh/drs/v1/ingest/file`; the workflow engine localizes `GET .../objects/{{id}}/stream` (Cromwell or Nextflow; raw bytes on the compose network).
 3. **WES** — `POST /ga4gh/wes/v1/runs` (WDL or Nextflow + params).
-4. **TES** — Ferrum routes WES to `POST /ga4gh/tes/v1/tasks` (Docker backend: Cromwell + nested GATK, or Nextflow with Docker enabled + nested GATK). Requires the demo TES overlay; see NOTICE.
+4. **TES** — Ferrum routes WES to `POST /ga4gh/tes/v1/tasks` (Docker backend: Cromwell + nested GATK, or Nextflow with Docker enabled + nested GATK). Stock Ferrum **v0.3.1** (`tes-docker`); see NOTICE.
 5. **DRS micro** — `scripts/drs_micro_benchmark.py` times `GET .../objects/{{id}}/stream` (**n = {drs_n}** runs per mode by default). Loopback/compose timing, not a WAN benchmark. **`./run --macro`:** after plain + encrypted ingests, one merged `drs_micro.json` with **`plain`** and **`crypt4gh_at_rest`** (and **`crypt4gh`** if `FERRUM_GA4GH_CRYPT4GH_PUBKEY` is set).
 6. **hap.py** — concordance on **this slice only**. Caller does **not** receive `--alleles` truth. Read `results/RUN_MANIFEST.json` before citing numbers.
 {_publication_block(root, metrics, dm, dataset)}

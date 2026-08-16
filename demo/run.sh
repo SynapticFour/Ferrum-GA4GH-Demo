@@ -198,21 +198,15 @@ if [[ "${FERRUM_GA4GH_WITH_INFRA:-0}" == "1" ]]; then
   fi
 fi
 
-echo "[demo] applying GA4GH demo overlay to Ferrum sources (WES TES workdir + docker executor)..."
+echo "[demo] using stock Ferrum pin (no overlay; TES/residency honesty is in v0.3.1)..."
 if [[ -d "$FERRUM_SRC/.git" ]]; then
   git -C "$FERRUM_SRC" checkout HEAD -- \
     crates/ferrum-drs/src/repo.rs \
     crates/ferrum-tes/src/executors/docker.rs \
+    crates/ferrum-wes/src/executors/tes.rs \
+    crates/ferrum-core/src/residency.rs \
     deploy/Dockerfile.gateway \
     2>/dev/null || true
-fi
-# Never rsync ferrum-gateway/Cargo.toml or main.rs — overlay versions strip features / laptop mode.
-rsync -a \
-  --exclude='crates/ferrum-gateway/Cargo.toml' \
-  --exclude='crates/ferrum-gateway/src/main.rs' \
-  "$ROOT/vendor/ferrum-overlay/" "$FERRUM_SRC/"
-if [[ -d "$FERRUM_SRC/.git" ]]; then
-  git -C "$FERRUM_SRC" checkout HEAD -- crates/ferrum-drs/src/repo.rs 2>/dev/null || true
 fi
 
 echo "[demo] fetching GIAB / Platinum subset (falls back to synthetic on failure)..."

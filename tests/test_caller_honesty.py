@@ -40,23 +40,13 @@ class TestCallerHonesty(unittest.TestCase):
             self.assertNotIn("--min-mapping-quality 0", cmd, rel)
             self.assertNotIn("gatkr/gatk-rs:latest", text, rel)
 
-    def test_overlay_does_not_fake_wes_lifecycle(self):
-        tes = (
-            ROOT / "vendor/ferrum-overlay/crates/ferrum-wes/src/executors/tes.rs"
-        ).read_text(encoding="utf-8")
-        self.assertNotIn("lifecycle_phase", tes)
-        self.assertNotIn("min_terminal_delay", tes)
-        self.assertNotIn("HelixTest WES", tes)
-        self.assertNotIn("nextflow/nextflow:latest", tes)
-        self.assertNotIn("broadinstitute/cromwell:latest", tes)
-
-    def test_overlay_residency_uses_microsecond_zulu_hash(self):
-        residency = (
-            ROOT / "vendor/ferrum-overlay/crates/ferrum-core/src/residency.rs"
-        ).read_text(encoding="utf-8")
-        self.assertIn("SecondsFormat::Micros", residency)
-        self.assertIn("timestamp_for_hash", residency)
-        self.assertNotIn("fake chain_valid", residency)
+    def test_stock_pin_does_not_rsync_overlay(self):
+        run_sh = (ROOT / "demo/run.sh").read_text(encoding="utf-8")
+        self.assertNotIn("vendor/ferrum-overlay", run_sh)
+        self.assertNotIn("rsync -a", run_sh)
+        self.assertFalse((ROOT / "vendor/ferrum-overlay").exists())
+        pin = (ROOT / "PINNED_VERSIONS.txt").read_text(encoding="utf-8")
+        self.assertIn("f28f27800f1d92c6a76670c760d9beb444c368d6", pin)
 
 
 if __name__ == "__main__":
