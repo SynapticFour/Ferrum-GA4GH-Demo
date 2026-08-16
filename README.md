@@ -171,4 +171,4 @@ This **repository** is [Apache-2.0](LICENSE) except `vendor/ferrum-overlay/`, wh
 
 ---
 
-Synaptic Four · Contact: [contact@synapticfour.com](mailto:contact@synapticfour.com) · [synapticfour.com](https://synapticfour.com)
+**Synaptic Four** · [contact@synapticfour.com](mailto:contact@synapticfour.com) · [synapticfour.com](https://synapticfour.com) · this repo Apache-2.0; Ferrum overlay/binaries BUSL-1.1
