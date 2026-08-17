@@ -53,12 +53,13 @@
     "errors": 0
   },
   "overlay": {
-    "applied": true,
-    "note": "TES/WES workdir overlay (BUSL-1.1). WES poll_status reports TES state as-is."
+    "applied": false,
+    "paths": [],
+    "note": "Pin is Ferrum v0.3.1. TES poll and residency hash live upstream. No vendor/ferrum-overlay rsync."
   },
   "security_demo_only": [
-    "Gateway mounts docker.sock (laptop TES, not a production posture).",
-    "Crypt4GH node.sec is a committed non-production fixture.",
+    "Gateway talks to Docker via docker-socket-proxy (nested TES may still bind host docker.sock; laptop TES, not a production posture).",
+    "Crypt4GH node.sec is generated locally and gitignored (old committed key is burned).",
     "Static HTTP serves workflows/ only."
   ]
 }

@@ -50,6 +50,10 @@ command -v docker >/dev/null || { echo "docker required" >&2; exit 1; }
 command -v python3 >/dev/null || { echo "python3 required" >&2; exit 1; }
 command -v curl >/dev/null || { echo "curl required (for static docker CLI in TES/Cromwell)" >&2; exit 1; }
 
+echo "[demo] ensuring Crypt4GH demo keys (gitignored; not the burned committed key)..."
+chmod +x "$ROOT/scripts/ensure-crypt4gh-demo-keys.sh"
+bash "$ROOT/scripts/ensure-crypt4gh-demo-keys.sh"
+
 # Optional Alpha path: not the evidence default. Refuse :latest / empty image unless overridden.
 if [[ "${FERRUM_GA4GH_CALLER}" == "gatk-rs" ]]; then
   _gatk_rs_refuse=0

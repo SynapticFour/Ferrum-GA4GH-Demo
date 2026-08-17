@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Crypt4GH keys** — `node.sec` / `node.pub` generated at `./run` (gitignored). Previously committed private key is burned; git history rewrite is an operator step.
+- **docker-socket-proxy** — gateway no longer bind-mounts host `docker.sock`. Nested TES may still bind the host socket. Not a hospital TES posture.
+- **`live-run.yml`** — schedule + dispatch only. GitHub-hosted is not `./run` evidence unless `FERRUM_GA4GH_LIVE_RUN=1`.
 - **Ferrum pin v0.3.1** — stock checkout, `vendor/ferrum-overlay` removed. TES poll and residency hash are upstream.
 
 ### Added

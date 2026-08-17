@@ -113,8 +113,8 @@ def main() -> None:
             ),
         },
         "security_demo_only": [
-            "Gateway mounts docker.sock for nested Cromwell/GATK (laptop TES, not a production posture).",
-            "Crypt4GH node.sec is a committed non-production fixture.",
+            "Gateway talks to Docker via docker-socket-proxy (nested TES tasks may still bind host docker.sock; laptop TES, not a production posture).",
+            "Crypt4GH node.sec is generated locally and gitignored (old committed key is burned).",
             "Static HTTP serves workflows/ only, for TES to fetch the WDL/NF.",
         ],
     }

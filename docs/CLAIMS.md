@@ -13,6 +13,6 @@ Use this file before citing the demo in a paper, grant, or customer deck.
 | Africa/field features work | Only if `africa_results.json` `summary.verdict` is `passed` and `ran > 0` | Skip-only is `not_evaluated`, not a pass. `chain_valid: false` is a failure. Postgres `chain_valid` is stock Ferrum **v0.3.1** (microsecond Zulu hash). |
 | Co-deploy Passport on DRS | After `./run --with-infra` if `co_deploy_results.json` `verdict` is `passed` | Broker JWT `iss` must match `FERRUM_AUTH__ISSUER` (host `external_url`); JWKS is the Docker-network broker URL. `test-object-1` is workspace-private. |
 | Crypt4GH at-rest stream timing | After `./run --macro` | `drs_micro.json` `crypt4gh_at_rest`. Loopback, n=3 default. |
-| Production-ready TES/Docker | **No** | `docker.sock` on the gateway is demo-only. Overlay patches Ferrum TES workdir (BUSL). |
+| Production-ready TES/Docker | **No** | Gateway uses docker-socket-proxy; nested TES may still bind host `docker.sock`. Overlay was **removed**; TES workdir is stock Ferrum v0.3.1. |
 
 The artefact to attach to a review is **`results/RUN_MANIFEST.json`**, then the JSON it points at — not the README table alone.

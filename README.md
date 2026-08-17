@@ -24,7 +24,7 @@ This demo is **proof / outreach**, not one of five products. Portfolio: [docs/EC
 
 Docker (~**8 GB** RAM, ~**20 GB** disk), `git`, `python3`, `curl`, `bash`, network (clone Ferrum, images, public data). **Sizing & phases:** [docs/architecture.md](docs/architecture.md).
 
-**Demo-only security:** the gateway mounts `docker.sock` so Cromwell can start GATK. The static HTTP server listens on `0.0.0.0` but serves **only** `workflows/`. Crypt4GH `node.sec` is a non-production fixture. Do not copy this compose posture to a hospital network.
+**Demo-only security:** the gateway reaches Docker through **docker-socket-proxy** (host `docker.sock` is not bind-mounted on the gateway). Nested TES tasks may still receive a host-daemon `docker.sock` bind so Cromwell can start GATK. Crypt4GH `node.sec` is **generated at `./run` time and gitignored**. Do not copy this compose posture to a hospital network.
 
 ## Run
 
@@ -132,7 +132,7 @@ Details: [docs/benchmark.md](docs/benchmark.md) (reviewer summary after a run).
 | `./run`, `demo/run.sh` | Entrypoints |
 | `demo/scenarios/village-network/` | Laptop two-container simulation |
 | `demo/scenarios/raspberry-pi/install-ferrum-edge.sh` | Pi 5 installer (pinned image required) |
-| `demo/docker-compose.ga4gh.yml` | TES, WES workdir, `docker.sock` (demo-only), Crypt4GH keys |
+| `demo/docker-compose.ga4gh.yml` | TES, WES workdir, docker-socket-proxy, Crypt4GH keys (generated) |
 | `demo/lib/*.py` | Ingest, WES JSON, metrics, Africa scenarios, manifests |
 | `workflows/tiny_hc.{wdl,nf}` | Minimal HaplotypeCaller (**no** `--alleles`) |
 | `scripts/` | Fetch, TRS cache, DRS micro-bench, `dataset_profile.py`, `update_docs.py` |

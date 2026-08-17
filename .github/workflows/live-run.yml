@@ -1,0 +1,36 @@
+# Full GATK/Cromwell `./run` — not default PR CI.
+#
+# Needs ~8 GB RAM, large images, and a workstation or a runner that already
+# has Docker + sibling cache. GitHub-hosted ubuntu-latest is not evidence.
+# Suite 2026.08-draft: schedule + dispatch only.
+name: Live ./run (not PR evidence)
+
+on:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: live-run
+  cancel-in-progress: true
+
+jobs:
+  hosted-is-not-proof:
+    if: ${{ vars.FERRUM_GA4GH_LIVE_RUN != '1' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: GitHub-hosted is not ./run evidence
+        run: |
+          echo "This workflow does not run GATK on github-hosted runners."
+          echo "Live proof is ./run on a workstation. Set variable FERRUM_GA4GH_LIVE_RUN=1 only on a capable runner."
+          echo "A green unit CI job is not this job."
+          exit 1
+
+  live-run:
+    if: ${{ vars.FERRUM_GA4GH_LIVE_RUN == '1' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v7
+      - name: ./run
+        run: ./run

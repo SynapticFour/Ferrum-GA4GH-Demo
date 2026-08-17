@@ -25,7 +25,7 @@ Pin: Ferrum **v0.3.1** in [`PINNED_VERSIONS.txt`](../PINNED_VERSIONS.txt). Co-de
 | Two Raspberry Pi village labs / field WiFi? | **No** | Two Docker containers on one host |
 | Africa / residency features? | Only if `africa_results.json` `summary.verdict` is `passed` and `ran > 0` | Skip-only is `not_evaluated` |
 | Passport on DRS? | After `./run --with-infra` if `co_deploy_results.json` `verdict` is `passed` | Broker `iss` must match Ferrum issuer |
-| Production-ready TES/Docker? | **No** | `docker.sock` on the gateway is demo-only |
+| Production-ready TES/Docker? | **No** | docker-socket-proxy on the gateway; nested TES may still bind host `docker.sock` |
 
 Default CI here is syntax + unit tests. **No Docker stack in GitHub Actions.** Live proof is local.
 
