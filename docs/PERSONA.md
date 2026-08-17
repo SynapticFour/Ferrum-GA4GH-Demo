@@ -12,7 +12,7 @@ This is not a hospital evaluation, not HelixTest conformance, and not a GIAB pap
 make smoke-evidence
 ```
 
-Pin: Ferrum **v0.3.1** in [`PINNED_VERSIONS.txt`](../PINNED_VERSIONS.txt). Co-deploy Passports: `./run --with-infra` (needs sibling `ga4gh-infra`).
+Pin: Ferrum **v0.3.2** in [`PINNED_VERSIONS.txt`](../PINNED_VERSIONS.txt). Co-deploy Passports: `./run --with-infra` (needs sibling `ga4gh-infra`).
 
 ## What ran vs what did not (honest sheet)
 

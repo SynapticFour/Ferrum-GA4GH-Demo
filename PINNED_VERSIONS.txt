@@ -7,8 +7,8 @@
 # Deprecated alias (typo in early docs): FERUM_SRC
 
 # Required unless FERRUM_GA4GH_ALLOW_UNPINNED=1. Empty pin = demo refuses to clone.
-# Ferrum v0.3.1 tag (commit, not the annotated tag object). Stock pin — no overlay.
-Ferrum-git=f28f27800f1d92c6a76670c760d9beb444c368d6
+# Ferrum v0.3.2 tag (commit, not the annotated tag object). Stock pin — no overlay.
+Ferrum-git=2bd147c99735866ac9cfb530f62ef984c8efce8b
 
 # Required for ./run --with-infra clone unless FERRUM_GA4GH_ALLOW_UNPINNED=1.
 # Matches Ferrum VERSIONS.lock GA4GH_INFRA_SHA (tag ga4gh-infra-v0.2.3).

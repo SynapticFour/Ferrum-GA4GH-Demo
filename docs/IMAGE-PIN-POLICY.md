@@ -7,7 +7,7 @@
 
 | Context | Rule |
 |---------|------|
-| **Pipeline-smoke evidence you keep** | Pin Ferrum git (`Ferrum-git=`, currently **v0.3.1**), ga4gh-infra git (`GA4GH-INFRA-git=`), and executor tags in `PINNED_VERSIONS.txt`. Village / Pi require `FERRUM_IMAGE` (digest preferred). |
+| **Pipeline-smoke evidence you keep** | Pin Ferrum git (`Ferrum-git=`, currently **v0.3.2**), ga4gh-infra git (`GA4GH-INFRA-git=`), and executor tags in `PINNED_VERSIONS.txt`. Village / Pi require `FERRUM_IMAGE` (digest preferred). |
 | **CI / developer laptop** | Syntax CI does not pull Ferrum images. Do not use `:latest` on any path that feeds `results/`. |
 | **Alpha / debug** | `gatk-rs` is not the evidence path. `:latest` is refused unless `FERRUM_GA4GH_ALLOW_LATEST=1`. Tools such as `nicolaka/netshoot:latest` are debug-only. |
 

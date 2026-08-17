@@ -86,7 +86,7 @@ Extra clone path: **`FERRUM_SRC`** (deprecated alias `FERUM_SRC`, default `.cach
 
 ## Stock Ferrum pin (demo)
 
-`./run` clones Ferrum **v0.3.1** (`Ferrum-git` in PINNED_VERSIONS.txt) and builds it **unpatched**. TES poll honesty and residency microsecond-Zulu hashing are upstream. Pin checkout failure is a hard error unless `FERRUM_GA4GH_ALLOW_UNPINNED=1`.
+`./run` clones Ferrum **v0.3.2** (`Ferrum-git` in PINNED_VERSIONS.txt) and builds it **unpatched**. TES poll honesty and residency microsecond-Zulu hashing are upstream. Pin checkout failure is a hard error unless `FERRUM_GA4GH_ALLOW_UNPINNED=1`.
 
 Compose **`FERRUM_GATEWAY_FEATURES=tes-docker`**, **`FERRUM_TES_DOCKER_*`**, **`FERRUM_WES_TES_*`** follow [Ferrum](https://github.com/SynapticFour/Ferrum). Conformance: [HelixTest](https://github.com/SynapticFour/HelixTest). Lab on-ramp: [Ferrum-Lab-Kit](https://github.com/SynapticFour/Ferrum-Lab-Kit).
 

@@ -3,7 +3,7 @@
 **Date:** 2026-08-15
 **Honesty:** This repo is a **GA4GH pipeline smoke** (DRS · WES · TES + hap.py on a tiny slice, plus a TRS **descriptor fetch**). It is **not** a GIAB publication benchmark, not HelixTest conformance, and not a field-hardware proof.
 
-**Pins:** [`PINNED_VERSIONS.txt`](../PINNED_VERSIONS.txt) (Ferrum **v0.3.1**) · Image policy: [`IMAGE-PIN-POLICY.md`](IMAGE-PIN-POLICY.md)
+**Pins:** [`PINNED_VERSIONS.txt`](../PINNED_VERSIONS.txt) (Ferrum **v0.3.2**) · Image policy: [`IMAGE-PIN-POLICY.md`](IMAGE-PIN-POLICY.md)
 
 ## What this Demo verifies (tangible)
 

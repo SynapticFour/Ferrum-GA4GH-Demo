@@ -7,7 +7,7 @@ make up
 # or: ./run
 ```
 
-Requires a **pinned** Ferrum git SHA in [PINNED_VERSIONS.txt](../PINNED_VERSIONS.txt) (**v0.3.1**). Override only with `FERRUM_GA4GH_ALLOW_UNPINNED=1`. Checkout env: `FERRUM_SRC` (default `.cache/stack/Ferrum`).
+Requires a **pinned** Ferrum git SHA in [PINNED_VERSIONS.txt](../PINNED_VERSIONS.txt) (**v0.3.2**). Override only with `FERRUM_GA4GH_ALLOW_UNPINNED=1`. Checkout env: `FERRUM_SRC` (default `.cache/stack/Ferrum`).
 
 Co-deploy Ferrum + ga4gh-infra:
 

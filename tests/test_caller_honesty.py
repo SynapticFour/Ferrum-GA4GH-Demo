@@ -46,7 +46,7 @@ class TestCallerHonesty(unittest.TestCase):
         self.assertNotIn("rsync -a", run_sh)
         self.assertFalse((ROOT / "vendor/ferrum-overlay").exists())
         pin = (ROOT / "PINNED_VERSIONS.txt").read_text(encoding="utf-8")
-        self.assertIn("f28f27800f1d92c6a76670c760d9beb444c368d6", pin)
+        self.assertIn("2bd147c99735866ac9cfb530f62ef984c8efce8b", pin)
 
 
 if __name__ == "__main__":
