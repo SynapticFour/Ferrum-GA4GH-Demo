@@ -10,9 +10,7 @@
 
 > This repository documents technical capabilities. It is not legal advice and does not provide regulatory certification. hap.py Precision/Recall/F1 here are **slice-level pipeline smoke**, not a publication GIAB result.
 
-## Ferrum / GA4GH suite
-
-These ten public repositories are from the same organisation and can be composed. They are not a fifth product and not a bundle SKU. Each repository keeps its own version and license. Roles, maturity, and who consumes whom: [SUITE-OVERVIEW](https://github.com/SynapticFour/Ferrum/blob/main/docs/SUITE-OVERVIEW.md).
+These public repositories are maintained by the same organisation and are designed to work together. Each repository keeps its own version and license. For details on roles, maturity, and how the components relate to one another, see [SUITE-OVERVIEW](https://github.com/SynapticFour/.github/blob/main/profile/SUITE-OVERVIEW.md).
 
 ## Quick start
 

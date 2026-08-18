@@ -8,7 +8,7 @@ Ferrum pin
 ----------
 
 This demo clones [Ferrum](https://github.com/SynapticFour/Ferrum) at the
-commit in PINNED_VERSIONS.txt (currently tag **v0.3.1**) and builds it
+commit in PINNED_VERSIONS.txt (currently tag **v0.3.2**) and builds it
 unpatched. Ferrum remains BUSL-1.1. Do not treat a green `./run` as an
 Apache Ferrum binary.
 

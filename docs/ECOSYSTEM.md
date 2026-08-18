@@ -1,6 +1,6 @@
 # Synaptic Four — this repo in the portfolio
 
-Four **products**, two free **ambassadors**, Ferrum **companions**, and **reference / demo** repos. Glue is GA4GH; Solum extends into clinical data. **Not a bundle SKU.** Canonical map: [SUITE-OVERVIEW](https://github.com/SynapticFour/Ferrum/blob/main/docs/SUITE-OVERVIEW.md).
+Four **products**, two free **ambassadors**, Ferrum **companions**, and **reference / demo** repos. Glue is GA4GH; Solum extends into clinical data. **Not a bundle SKU.** Canonical map: [SUITE-OVERVIEW](https://github.com/SynapticFour/.github/blob/main/profile/SUITE-OVERVIEW.md).
 
 **You are here:** [Ferrum-GA4GH-Demo](https://github.com/SynapticFour/Ferrum-GA4GH-Demo) — **reference / demo**, not a product. Local `./run` pipeline smoke. Not a GIAB publication benchmark, not a pilot.
 
