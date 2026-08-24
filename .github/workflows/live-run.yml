@@ -6,8 +6,11 @@
 name: Live ./run (not PR evidence)
 
 on:
-  schedule:
-    - cron: "0 4 * * 1"
+  # Weekly hosted run paused — it only proved that GitHub-hosted is not
+  # ./run evidence (red X every Monday). Restore the cron when a capable
+  # runner has FERRUM_GA4GH_LIVE_RUN=1.
+  # schedule:
+  #   - cron: "0 4 * * 1"
   workflow_dispatch:
 
 concurrency:
@@ -24,7 +27,7 @@ jobs:
           echo "This workflow does not run GATK on github-hosted runners."
           echo "Live proof is ./run on a workstation. Set variable FERRUM_GA4GH_LIVE_RUN=1 only on a capable runner."
           echo "A green unit CI job is not this job."
-          exit 1
+          echo "::notice::Skipped — GitHub-hosted is not ./run evidence."
 
   live-run:
     if: ${{ vars.FERRUM_GA4GH_LIVE_RUN == '1' }}
