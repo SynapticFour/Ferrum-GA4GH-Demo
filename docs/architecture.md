@@ -175,7 +175,7 @@ does not clash with Ferrum’s gateway (**18080** by default).
 `external_url` in `broker.sqlite.toml`), `FERRUM_AUTH__JWKS_URL=http://aai-broker:8080/jwks.json`
 (Docker-network fetch from the gateway), `FERRUM_SERVICES__ENABLE_PASSPORTS=false`,
 `FERRUM_DISCOVERY__ENABLED=true`, `FERRUM_DISCOVERY__AUTO_REGISTER=true`.
-`aai-broker` needs `REGISTRY_BOOTSTRAP_API_KEY` (ga4gh-infra v0.2.2 fail-closes without it).
+`aai-broker` needs `REGISTRY_BOOTSTRAP_API_KEY` (ga4gh-infra v0.2.3 fail-closes without it).
 Built-in ferrum-passports are disabled; Passports are validated via ga4gh-clearinghouse
 against the broker JWKS. `test-object-1` is workspace-private: the co-deploy scenario
 adds the mock-idp subject as a `demo-workspace-01` viewer before the Bearer DRS GET.

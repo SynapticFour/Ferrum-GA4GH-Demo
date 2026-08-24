@@ -55,3 +55,5 @@ Numbers below are a **pipeline smoke**. If the dataset row says synthetic, do no
 ## License
 
 This repository is [Apache-2.0](LICENSE). Ferrum remains BUSL-1.1 (see [NOTICE](NOTICE)).
+
+**Synaptic Four** · [contact@synapticfour.com](mailto:contact@synapticfour.com) · [synapticfour.com](https://synapticfour.com)
