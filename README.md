@@ -1,8 +1,5 @@
 # Ferrum GA4GH demonstration
 
-Status: [STATUS.md](STATUS.md).
-
-
 **Reference / demo** — not a product, not a pilot, not an evaluation kit. Local laptop smoke of tagged [Ferrum](https://github.com/SynapticFour/Ferrum).
 
 **Stock Ferrum v0.3.2 is the `./run` pin.** A green `./run` is proof of **tagged** Ferrum, not a patched checkout. Persona: [docs/PERSONA.md](docs/PERSONA.md). Claims: [docs/CLAIMS.md](docs/CLAIMS.md).
