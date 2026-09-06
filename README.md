@@ -1,6 +1,6 @@
 # Ferrum GA4GH demonstration
 
-Freeze status (2026-09): [STATUS.md](STATUS.md).
+Status: [STATUS.md](STATUS.md).
 
 
 **Reference / demo** — not a product, not a pilot, not an evaluation kit. Local laptop smoke of tagged [Ferrum](https://github.com/SynapticFour/Ferrum).
