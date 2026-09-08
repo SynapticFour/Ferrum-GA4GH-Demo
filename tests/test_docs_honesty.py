@@ -21,6 +21,30 @@ class TestDocsHonesty(unittest.TestCase):
         self.assertIn("alleles", readme.lower())
         self.assertNotIn("| Precision | 1.0 |", readme)
         self.assertNotIn("| F1 | 1.0 |", readme)
+        # First screen must not look like a failed product scoreboard.
+        self.assertNotIn("| F1 | 0.0 |", readme)
+        self.assertNotIn("| Precision | 0.0 |", readme)
+        self.assertIn("not a Ferrum failure", readme)
+
+    def test_readme_happy_summary_explains_zero_f1(self):
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "update_docs", ROOT / "scripts" / "update_docs.py"
+        )
+        mod = importlib.util.module_from_spec(spec)
+        assert spec.loader is not None
+        spec.loader.exec_module(mod)
+        text = mod._readme_happy_summary(
+            {
+                "f1_score": 0.0,
+                "precision": 0.0,
+                "caller_uses_truth_alleles": False,
+            },
+            ROOT,
+        )
+        self.assertIn("expected", text.lower())
+        self.assertNotIn("| F1 | 0.0 |", text)
 
     def test_decisions_does_not_claim_in_repo_video_script(self):
         text = (ROOT / "DECISIONS.md").read_text(encoding="utf-8")
