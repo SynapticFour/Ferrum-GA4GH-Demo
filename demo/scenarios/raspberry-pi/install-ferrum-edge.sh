@@ -5,7 +5,8 @@
 #   FERRUM_IMAGE=ghcr.io/synapticfour/ferrum:<tag-or-digest> \
 #     bash demo/scenarios/raspberry-pi/install-ferrum-edge.sh
 #
-# Requirements: Raspberry Pi 5 (4GB+), Raspberry Pi OS 64-bit or Ubuntu 24.04
+# Requirements: Raspberry Pi 5, 8 GB RAM (16 GB accepted), 64-bit OS,
+# data directory on USB SSD or NVMe. Same board as Ferrum ADR-026.
 # After Docker is present, the node can run without further downloads if the image is already local.
 #
 # Lab-Kit alternative: Ferrum-Lab-Kit/install-edge.sh (profile + compose merge)
@@ -44,12 +45,21 @@ echo ""
 
 ARCH=$(uname -m)
 [[ "$ARCH" == "aarch64" ]] || [[ "$ARCH" == "arm64" ]] || \
-  warn "Architecture $ARCH detected. ARM64 recommended for Raspberry Pi."
+  fail "Need a 64-bit ARM OS (aarch64). Detected: $ARCH"
+
+MODEL=""
+if [[ -r /proc/device-tree/model ]]; then
+  MODEL="$(tr -d '\0' < /proc/device-tree/model)"
+fi
+case "$MODEL" in
+  "Raspberry Pi 5"*) ;;
+  *) fail "Supported field board is Raspberry Pi 5, 8 GB, 64-bit. Detected: ${MODEL:-unknown}" ;;
+esac
 
 RAM_MB=$(grep MemTotal /proc/meminfo | awk '{print int($2/1024)}')
-[[ $RAM_MB -ge 3800 ]] || \
-  fail "Minimum 4GB RAM required. Detected: ${RAM_MB}MB"
-ok "RAM: ${RAM_MB}MB"
+[[ $RAM_MB -ge 7000 ]] || \
+  fail "Need Raspberry Pi 5 with 8 GB RAM or more. Detected MemTotal: ${RAM_MB}MB"
+ok "RAM: ${RAM_MB}MB ($MODEL)"
 
 banner "Checking Docker..."
 if ! command -v docker &>/dev/null; then
@@ -59,7 +69,11 @@ ok "Docker: $(docker --version | cut -d' ' -f3 | tr -d ',')"
 
 banner "Setting up data directory..."
 mkdir -p "$FERRUM_DATA_DIR/objects" "$FERRUM_DATA_DIR/data"
-ok "Data directory: $FERRUM_DATA_DIR"
+DATA_DEV="$(df -P "$FERRUM_DATA_DIR" | awk 'NR==2 {print $1}')"
+case "$DATA_DEV" in
+  *mmcblk*) fail "$FERRUM_DATA_DIR is on microSD ($DATA_DEV). Mount a USB SSD or NVMe and set FERRUM_DATA_DIR to that mount." ;;
+esac
+ok "Data directory: $FERRUM_DATA_DIR ($DATA_DEV)"
 
 banner "Generating Ferrum Edge configuration..."
 cat > "$FERRUM_DATA_DIR/docker-compose.yml" <<COMPOSE
@@ -69,7 +83,7 @@ services:
     platform: linux/arm64
     environment:
       FERRUM_AFRICA__OFFLINE_FIRST: "true"
-      FERRUM_AFRICA__MAX_MEMORY_MB: "$(( RAM_MB * 3 / 4 ))"
+      FERRUM_AFRICA__MAX_MEMORY_MB: "3072"
       FERRUM_AFRICA__SQLITE_PATH: "/data/ferrum.db"
       FERRUM_AFRICA__OBJECTS_PATH: "/data/objects"
       FERRUM_AFRICA__POWER_ENABLED: "true"

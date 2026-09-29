@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Pi installer** — `install-ferrum-edge.sh` matches Ferrum ADR-026: Raspberry Pi 5, 8 GB, 64-bit, data on USB SSD or NVMe, Ferrum cap 3072 MB.
 - **Crypt4GH keys** — `node.sec` / `node.pub` generated at `./run` (gitignored). Previously committed private key is burned. Git history still contains the old blob; **history rewrite is not planned** (accepted residual risk, 2026-08-17).
 - **docker-socket-proxy** — pin `tecnativa/docker-socket-proxy:0.3.0` by index digest; `EXEC=0` / `VOLUMES=0` (Ferrum TES uses bollard create/start/logs/pull + `NetworkMode`, not docker exec or the Volumes API). Nested TES may still bind the host socket (`FERRUM_TES_DOCKER_MOUNT_SOCKET=1`). Not a hospital TES posture.
 - **`live-run.yml`** — weekly GitHub-hosted schedule paused (it only failed closed with “hosted is not evidence”). `workflow_dispatch` remains. Live proof is `./run` on a workstation with `FERRUM_GA4GH_LIVE_RUN=1`.
