@@ -7,6 +7,8 @@ services:
   ferrum-kisumu:
     image: "${FERRUM_IMAGE:-ghcr.io/synapticfour/ferrum:pin-me}"
     environment:
+      # Inside a container the process must listen on a non-loopback address; exposure to the network is controlled by the published port.
+      FERRUM_BIND: "0.0.0.0:8080"
       FERRUM_AFRICA__OFFLINE_FIRST: "true"
       FERRUM_AFRICA__MAX_MEMORY_MB: "1024"
       FERRUM_FEDERATION__ENABLED: "true"
@@ -24,6 +26,8 @@ services:
   ferrum-nouna:
     image: "${FERRUM_IMAGE:-ghcr.io/synapticfour/ferrum:pin-me}"
     environment:
+      # Inside a container the process must listen on a non-loopback address; exposure to the network is controlled by the published port.
+      FERRUM_BIND: "0.0.0.0:8080"
       FERRUM_AFRICA__OFFLINE_FIRST: "true"
       FERRUM_AFRICA__MAX_MEMORY_MB: "1024"
       FERRUM_FEDERATION__ENABLED: "true"

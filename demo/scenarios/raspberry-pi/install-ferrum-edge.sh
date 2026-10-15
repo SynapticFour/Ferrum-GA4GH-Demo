@@ -5,6 +5,9 @@
 #   FERRUM_IMAGE=ghcr.io/synapticfour/ferrum:<tag-or-digest> \
 #     bash demo/scenarios/raspberry-pi/install-ferrum-edge.sh
 #
+# FERRUM_LISTEN_HOST defaults to 0.0.0.0 (publish on all host interfaces).
+# Set FERRUM_LISTEN_HOST=127.0.0.1 to publish the port on loopback only.
+#
 # Requirements: Raspberry Pi 5, 8 GB RAM (16 GB accepted), 64-bit OS,
 # data directory on USB SSD or NVMe. Same board as Ferrum ADR-026.
 # After Docker is present, the node can run without further downloads if the image is already local.
@@ -82,6 +85,8 @@ services:
     image: "${FERRUM_IMAGE}"
     platform: linux/arm64
     environment:
+      # Inside a container the process must listen on a non-loopback address; exposure to the network is controlled by the published port.
+      FERRUM_BIND: "0.0.0.0:8080"
       FERRUM_AFRICA__OFFLINE_FIRST: "true"
       FERRUM_AFRICA__MAX_MEMORY_MB: "3072"
       FERRUM_AFRICA__SQLITE_PATH: "/data/ferrum.db"
@@ -90,7 +95,7 @@ services:
       FERRUM_MAX_CONCURRENT_REQUESTS: "4"
       FERRUM_BACKGROUND_INDEXING: "false"
     ports:
-      - "${FERRUM_PORT}:8080"
+      - "${FERRUM_LISTEN_HOST:-0.0.0.0}:${FERRUM_PORT}:8080"
     volumes:
       - ./data:/data
     restart: unless-stopped
@@ -129,6 +134,7 @@ ok "Beacon v2 responding: id=$BEACON_ID"
 HOST_IP="$(hostname -I 2>/dev/null | awk '{print $1}' || echo '127.0.0.1')"
 echo ""
 echo "Ferrum Edge is running on ${HOST_IP}:${FERRUM_PORT}"
+echo "The node is reachable from the LAN because the installer sets the bind address explicitly."
 echo "  Beacon v2:  http://${HOST_IP}:${FERRUM_PORT}/ga4gh/beacon/v2"
 echo "  DRS:        http://${HOST_IP}:${FERRUM_PORT}/ga4gh/drs/v1"
 echo "  Health:     http://${HOST_IP}:${FERRUM_PORT}/health"
