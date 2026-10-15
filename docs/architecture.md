@@ -101,7 +101,7 @@ Two Ferrum **containers** on one laptop (labels Kisumu + Nouna). This is **not**
 | `demo/lib/africa_scenarios.py` | Synthetic ONT/pathogen ingest per node |
 | `demo/lib/africa_feature_detect.py` | Probe gateway for Africa/federation flags |
 
-**Simulation-first, then hardware:** the compose file is a laptop stand-in. Physical install: `install-ferrum-edge.sh` with a **pinned** `FERRUM_IMAGE` (no curl|bash).
+**Simulation-first, then hardware:** the compose file is a laptop stand-in. Physical install: `install-ferrum-edge.sh` with a **pinned** `FERRUM_IMAGE` (no curl|bash). The node is reachable from the LAN because the installer sets the bind address explicitly.
 
 ```mermaid
 flowchart LR
