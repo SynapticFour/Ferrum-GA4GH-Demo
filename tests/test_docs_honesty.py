@@ -35,14 +35,23 @@ class TestDocsHonesty(unittest.TestCase):
         mod = importlib.util.module_from_spec(spec)
         assert spec.loader is not None
         spec.loader.exec_module(mod)
-        text = mod._readme_happy_summary(
-            {
-                "f1_score": 0.0,
-                "precision": 0.0,
-                "caller_uses_truth_alleles": False,
-            },
-            ROOT,
-        )
+        # data/synthetic_manifest.txt is gitignored. _readme_happy_summary
+        # explains F1 0 as expected only when that local marker is present.
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "data").mkdir()
+            (root / "data" / "synthetic_manifest.txt").write_text(
+                "synthetic=1\n",
+                encoding="utf-8",
+            )
+            text = mod._readme_happy_summary(
+                {
+                    "f1_score": 0.0,
+                    "precision": 0.0,
+                    "caller_uses_truth_alleles": False,
+                },
+                root,
+            )
         self.assertIn("expected", text.lower())
         self.assertNotIn("| F1 | 0.0 |", text)
 
